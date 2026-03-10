@@ -2,18 +2,18 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabase";
 
 // ============================================================
-// DADOS INICIAIS ó importados dos CSVs das 3 empresas
+// DADOS INICIAIS ‚Äî importados dos CSVs das 3 empresas
 // ============================================================
 const EMPRESAS_INICIAIS = [
   { id: "filial02", nome: "FILIAL 02 - MANAUS", inscricao: "04.235.429-3", cnpj: "07.791.042/0002-18", ativa: true },
   { id: "filial13", nome: "FILIAL 13 - MLA", inscricao: "04.235.429-X", cnpj: "07.791.042/0013-00", ativa: true },
   { id: "linhasnorte", nome: "LINHAS DO NORTE", inscricao: "04.235.429-Y", cnpj: "00.000.000/0001-00", ativa: true },
 ];
-// Alias global para compatibilidade (ser· sobrescrito pelo estado do App via prop)
+// Alias global para compatibilidade (ser√° sobrescrito pelo estado do App via prop)
 let EMPRESAS = EMPRESAS_INICIAIS;
 
-const FINALIDADES = ["Uso/Consumo", "IndustrializaÁ„o", "Revenda", "Remessa/TransferÍncia", "N„o Identificado"];
-const STATUS_LIST = ["Identificada", "Em Rean·lise", "Aguardando Pagamento", "Aguarda Email SEFAZ", "DesembaraÁo Solicitado", "DesembaraÁada", "Recusada", "Postergada"];
+const FINALIDADES = ["Uso/Consumo", "Industrializa√ß√£o", "Revenda", "Remessa/Transfer√™ncia", "N√£o Identificado"];
+const STATUS_LIST = ["Identificada", "Em Rean√°lise", "Aguardando Pagamento", "Aguarda Email SEFAZ", "Desembara√ßo Solicitado", "Desembara√ßada", "Recusada", "Postergada"];
 
 function parseValor(v) {
   if (!v) return 0;
@@ -84,11 +84,11 @@ function fmtMoeda(v) {
 function getAlertas(nota) {
   const dias = nota.qtdeDias;
   const alertas = [];
-  if (["DesembaraÁada", "Recusada"].includes(nota.status)) return alertas;
-  if (nota.valor > 25000) alertas.push({ tipo: "danger", msg: "Nota acima de R$ 25.000 ó risco de multa de 10%" });
-  if (dias >= 60) alertas.push({ tipo: "danger", msg: `${dias} dias ó PEND NCIA SEFAZ! Multa di·ria ativa` });
-  else if (dias >= 50) alertas.push({ tipo: "danger", msg: `${dias} dias ó AtenÁ„o! PrÛximo de 60 dias (multa di·ria)` });
-  else if (dias >= 25 && dias < 30) alertas.push({ tipo: "warning", msg: `${dias} dias ó Reanalisar antes de 30 dias para evitar taxa de R$ 50` });
+  if (["Desembara√ßada", "Recusada"].includes(nota.status)) return alertas;
+  if (nota.valor > 25000) alertas.push({ tipo: "danger", msg: "Nota acima de R$ 25.000 ‚Äî risco de multa de 10%" });
+  if (dias >= 60) alertas.push({ tipo: "danger", msg: `${dias} dias ‚Äî PEND√äNCIA SEFAZ! Multa di√°ria ativa` });
+  else if (dias >= 50) alertas.push({ tipo: "danger", msg: `${dias} dias ‚Äî Aten√ß√£o! Pr√≥ximo de 60 dias (multa di√°ria)` });
+  else if (dias >= 25 && dias < 30) alertas.push({ tipo: "warning", msg: `${dias} dias ‚Äî Reanalisar antes de 30 dias para evitar taxa de R$ 50` });
   if (nota.status === "Postergada" && nota.dtPostergacao) {
     const dtPost = parseDateBR(nota.dtPostergacao);
     if (dtPost) {
@@ -96,7 +96,7 @@ function getAlertas(nota) {
       limite.setDate(limite.getDate() + 120);
       const hoje = new Date("2026-03-06");
       const restam = Math.floor((limite - hoje) / (1000 * 60 * 60 * 24));
-      if (restam <= 30) alertas.push({ tipo: "warning", msg: `PostergaÁ„o vence em ${restam} dias` });
+      if (restam <= 30) alertas.push({ tipo: "warning", msg: `Posterga√ß√£o vence em ${restam} dias` });
     }
   }
   if (alertas.length === 0 && dias < 25) alertas.push({ tipo: "ok", msg: "Dentro do prazo" });
@@ -105,20 +105,20 @@ function getAlertas(nota) {
 
 function getProximoPasso(nota) {
   const dias = nota.qtdeDias;
-  if (nota.status === "DesembaraÁada") return "? ConcluÌda ó DesembaraÁada";
-  if (nota.status === "Recusada") return "? ConcluÌda ó Recusada no portal";
-  if (nota.status === "Identificada") return "?? 1∫ Passo: Realizar Rean·lise ó identificar CC, Finalidade e Respons·vel";
-  if (nota.status === "Em Rean·lise") {
-    if (nota.noRM === false) return "?? Acionar comprador/respons·vel ó nota n„o est· no RM";
-    if (nota.noRM === null) return "?? Verificar se nota est· lanÁada no RM";
-    if (nota.valor > 25000) return "?? Nota >R$25k ó Solicitar desembaraÁo via EMAIL ‡ SEFAZ com justificativa";
-    return "?? Solicitar DesembaraÁo ó nota confirmada no RM";
+  if (nota.status === "Desembara√ßada") return "‚úÖ Conclu√≠da ‚Äî Desembara√ßada";
+  if (nota.status === "Recusada") return "‚ùå Conclu√≠da ‚Äî Recusada no portal";
+  if (nota.status === "Identificada") return "üîç 1¬∫ Passo: Realizar Rean√°lise ‚Äî identificar CC, Finalidade e Respons√°vel";
+  if (nota.status === "Em Rean√°lise") {
+    if (nota.noRM === false) return "üìû Acionar comprador/respons√°vel ‚Äî nota n√£o est√° no RM";
+    if (nota.noRM === null) return "üîç Verificar se nota est√° lan√ßada no RM";
+    if (nota.valor > 25000) return "üìß Nota >R$25k ‚Äî Solicitar desembara√ßo via EMAIL √† SEFAZ com justificativa";
+    return "üìã Solicitar Desembara√ßo ‚Äî nota confirmada no RM";
   }
-  if (nota.status === "Aguardando Pagamento") return "?? Aguardando Financeiro efetuar pagamento de taxa/ICMS";
-  if (nota.status === "Aguarda Email SEFAZ") return "?? Aguardando retorno da SEFAZ ao email enviado";
-  if (nota.status === "DesembaraÁo Solicitado") return "? SolicitaÁ„o em an·lise pela SEFAZ/AM";
-  if (nota.status === "Postergada") return "??? Nota postergada ó monitorar prazo de 180 dias";
-  return "ó";
+  if (nota.status === "Aguardando Pagamento") return "üí∞ Aguardando Financeiro efetuar pagamento de taxa/ICMS";
+  if (nota.status === "Aguarda Email SEFAZ") return "üìß Aguardando retorno da SEFAZ ao email enviado";
+  if (nota.status === "Desembara√ßo Solicitado") return "‚è≥ Solicita√ß√£o em an√°lise pela SEFAZ/AM";
+  if (nota.status === "Postergada") return "üóìÔ∏è Nota postergada ‚Äî monitorar prazo de 180 dias";
+  return "‚Äî";
 }
 
 // ============================================================
@@ -130,11 +130,11 @@ const LOGO_URL = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BS
 function Badge({ status }) {
   const map = {
     "Identificada": "bg-gray-100 text-gray-700",
-    "Em Rean·lise": "bg-blue-100 text-blue-700",
+    "Em Rean√°lise": "bg-blue-100 text-blue-700",
     "Aguardando Pagamento": "bg-yellow-100 text-yellow-800",
     "Aguarda Email SEFAZ": "bg-purple-100 text-purple-700",
-    "DesembaraÁo Solicitado": "bg-orange-100 text-orange-700",
-    "DesembaraÁada": "bg-green-100 text-green-700",
+    "Desembara√ßo Solicitado": "bg-orange-100 text-orange-700",
+    "Desembara√ßada": "bg-green-100 text-green-700",
     "Recusada": "bg-red-100 text-red-700",
     "Postergada": "bg-indigo-100 text-indigo-700",
   };
@@ -146,10 +146,10 @@ function Badge({ status }) {
 }
 
 function AlertBadge({ dias, valor }) {
-  if (dias >= 60) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white">?? {dias}d CRÕTICO</span>;
-  if (dias >= 50) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">?? {dias}d</span>;
-  if (dias >= 25) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">?? {dias}d</span>;
-  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">?? {dias}d</span>;
+  if (dias >= 60) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white">üî¥ {dias}d CR√çTICO</span>;
+  if (dias >= 50) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">üî¥ {dias}d</span>;
+  if (dias >= 25) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">üü° {dias}d</span>;
+  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">üü¢ {dias}d</span>;
 }
 
 // ============================================================
@@ -164,15 +164,15 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
   const salvar = () => {
     const agora = new Date().toLocaleString("pt-BR");
     const acoes = [];
-    if (form.status !== nota.status) acoes.push(`Status alterado: "${nota.status}" ? "${form.status}"`);
+    if (form.status !== nota.status) acoes.push(`Status alterado: "${nota.status}" ‚Üí "${form.status}"`);
     if (form.centroCusto !== nota.centroCusto) acoes.push(`Centro de Custo: "${form.centroCusto}"`);
     if (form.finalidade !== nota.finalidade) acoes.push(`Finalidade: "${form.finalidade}"`);
-    if (form.responsavel !== nota.responsavel) acoes.push(`Respons·vel: "${form.responsavel}"`);
-    if (form.noRM !== nota.noRM) acoes.push(`No RM: ${form.noRM ? "Sim" : "N„o"}`);
+    if (form.responsavel !== nota.responsavel) acoes.push(`Respons√°vel: "${form.responsavel}"`);
+    if (form.noRM !== nota.noRM) acoes.push(`No RM: ${form.noRM ? "Sim" : "N√£o"}`);
 
     const novoHistorico = [...(nota.historico || [])];
     acoes.forEach(a => novoHistorico.push({ acao: a, usuario: usuarioAtual.nome, data: agora }));
-    if (acoes.length === 0) novoHistorico.push({ acao: "Nota revisada sem alteraÁıes", usuario: usuarioAtual.nome, data: agora });
+    if (acoes.length === 0) novoHistorico.push({ acao: "Nota revisada sem altera√ß√µes", usuario: usuarioAtual.nome, data: agora });
 
     onSave({ ...form, historico: novoHistorico });
   };
@@ -184,12 +184,12 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
         <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "#f0f0f0" }}>
           <div>
             <h2 className="font-bold text-lg text-gray-800">{nota.razaoSocial}</h2>
-            <p className="text-sm text-gray-500">NF-e n∫ {nota.numNota} ó CFOP {nota.cfop} ó {EMPRESAS.find(e => e.id === nota.empresa)?.nome}</p>
+            <p className="text-sm text-gray-500">NF-e n¬∫ {nota.numNota} ‚Äî CFOP {nota.cfop} ‚Äî {EMPRESAS.find(e => e.id === nota.empresa)?.nome}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl font-light">◊</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl font-light">√ó</button>
         </div>
 
-        {/* PrÛximo Passo */}
+        {/* Pr√≥ximo Passo */}
         <div className="mx-5 mt-4 p-3 rounded-xl text-sm font-medium" style={{ background: "#fff7f0", border: "1px solid #ffd6b8", color: "#b84a00" }}>
           {getProximoPasso(form)}
         </div>
@@ -207,7 +207,7 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
             <button key={t} onClick={() => setActiveTab(t)}
               className={`px-4 py-2 text-sm font-semibold capitalize rounded-t-lg transition-all ${activeTab === t ? "text-white" : "text-gray-500 hover:text-gray-700"}`}
               style={activeTab === t ? { background: "#E8450A" } : {}}>
-              {t === "dados" ? "Dados" : t === "financeiro" ? "Financeiro" : "HistÛrico"}
+              {t === "dados" ? "Dados" : t === "financeiro" ? "Financeiro" : "Hist√≥rico"}
             </button>
           ))}
         </div>
@@ -224,7 +224,7 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
                 <p className="text-xs text-gray-600 mt-1 break-all">{form.chave}</p>
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase">Dt. Emiss„o</label>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Dt. Emiss√£o</label>
                 <p className="text-sm text-gray-800 mt-1">{form.dtEmissao}</p>
               </div>
               <div>
@@ -242,9 +242,9 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
                 <label className="text-xs font-semibold text-gray-500 uppercase">Nota no RM?</label>
                 <select value={form.noRM === null ? "" : form.noRM ? "sim" : "nao"} onChange={e => set("noRM", e.target.value === "" ? null : e.target.value === "sim")}
                   className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }}>
-                  <option value="">N„o verificado</option>
-                  <option value="sim">? Sim</option>
-                  <option value="nao">? N„o</option>
+                  <option value="">N√£o verificado</option>
+                  <option value="sim">‚úÖ Sim</option>
+                  <option value="nao">‚ùå N√£o</option>
                 </select>
               </div>
               <div>
@@ -262,25 +262,25 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
                 </select>
               </div>
               <div className="col-span-2">
-                <label className="text-xs font-semibold text-gray-500 uppercase">Respons·vel / Comprador</label>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Respons√°vel / Comprador</label>
                 <input value={form.responsavel} onChange={e => set("responsavel", e.target.value)}
-                  placeholder="Nome do respons·vel"
+                  placeholder="Nome do respons√°vel"
                   className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase">Dt. Rean·lise</label>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Dt. Rean√°lise</label>
                 <input type="text" value={form.dtReanalise} onChange={e => set("dtReanalise", e.target.value)}
                   placeholder="DD/MM/AAAA"
                   className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase">Dt. PostergaÁ„o</label>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Dt. Posterga√ß√£o</label>
                 <input type="text" value={form.dtPostergacao} onChange={e => set("dtPostergacao", e.target.value)}
                   placeholder="DD/MM/AAAA"
                   className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
               </div>
               <div className="col-span-2">
-                <label className="text-xs font-semibold text-gray-500 uppercase">ObservaÁıes</label>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Observa√ß√µes</label>
                 <textarea value={form.obs} onChange={e => set("obs", e.target.value)} rows={3}
                   className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
               </div>
@@ -290,11 +290,11 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
           {activeTab === "financeiro" && (
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 p-3 rounded-xl text-sm" style={{ background: "#f8f9fa" }}>
-                <p className="text-xs text-gray-500 mb-1">Taxa de desembaraÁo È fixa. Os demais valores s„o informados pelo DTE e registrados manualmente.</p>
+                <p className="text-xs text-gray-500 mb-1">Taxa de desembara√ßo √© fixa. Os demais valores s√£o informados pelo DTE e registrados manualmente.</p>
               </div>
               {[
-                { k: "taxaReanalise", label: "Taxa de Rean·lise (R$)" },
-                { k: "taxaDesembaraco", label: "Taxa de DesembaraÁo (R$ 50,00 fixo)" },
+                { k: "taxaReanalise", label: "Taxa de Rean√°lise (R$)" },
+                { k: "taxaDesembaraco", label: "Taxa de Desembara√ßo (R$ 50,00 fixo)" },
                 { k: "icmsAntecipado", label: "ICMS Antecipado (R$)" },
                 { k: "multa", label: "Multa (R$)" },
                 { k: "juros", label: "Juros (R$)" },
@@ -324,7 +324,7 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
                   </div>
                   <div>
                     <p className="text-sm text-gray-800">{h.acao}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{h.usuario} ó {h.data}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{h.usuario} ‚Äî {h.data}</p>
                   </div>
                 </div>
               ))}
@@ -334,7 +334,7 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
 
         <div className="flex justify-end gap-3 p-5 border-t" style={{ borderColor: "#f0f0f0" }}>
           <button onClick={onClose} className="px-4 py-2 rounded-lg border text-sm text-gray-600 hover:bg-gray-50" style={{ borderColor: "#e5e7eb" }}>Cancelar</button>
-          <button onClick={salvar} className="px-6 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}>Salvar AlteraÁıes</button>
+          <button onClick={salvar} className="px-6 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}>Salvar Altera√ß√µes</button>
         </div>
       </div>
     </div>
@@ -345,26 +345,26 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
 // DRAWER DE ALERTAS
 // ============================================================
 function DrawerAlertas({ notas, filtro, onClose, onVerNota }) {
-  const ativas = notas.filter(n => !["DesembaraÁada", "Recusada"].includes(n.status));
+  const ativas = notas.filter(n => !["Desembara√ßada", "Recusada"].includes(n.status));
   let lista = [];
   let titulo = "";
 
   if (filtro === "critico") {
     lista = ativas.filter(n => n.qtdeDias >= 60).sort((a, b) => b.qtdeDias - a.qtdeDias);
-    titulo = "?? Notas CrÌticas ó 60+ dias";
+    titulo = "üî¥ Notas Cr√≠ticas ‚Äî 60+ dias";
   } else if (filtro === "atencao") {
     lista = ativas.filter(n => n.qtdeDias >= 25 && n.qtdeDias < 60).sort((a, b) => b.qtdeDias - a.qtdeDias);
-    titulo = "?? AtenÁ„o ó 25 a 59 dias";
+    titulo = "üü° Aten√ß√£o ‚Äî 25 a 59 dias";
   } else if (filtro === "acima25k") {
     lista = ativas.filter(n => n.valor > 25000).sort((a, b) => b.valor - a.valor);
-    titulo = "?? Notas acima de R$ 25.000";
+    titulo = "‚ö†Ô∏è Notas acima de R$ 25.000";
   } else if (filtro === "pagamento") {
     lista = ativas.filter(n => n.status === "Aguardando Pagamento");
-    titulo = "?? Aguardando Pagamento";
+    titulo = "üí∞ Aguardando Pagamento";
   } else if (filtro?.startsWith("empresa_")) {
     const empId = filtro.replace("empresa_", "");
     lista = ativas.filter(n => n.empresa === empId).sort((a, b) => b.qtdeDias - a.qtdeDias);
-    titulo = `?? ${EMPRESAS.find(e => e.id === empId)?.nome}`;
+    titulo = `üè¢ ${EMPRESAS.find(e => e.id === empId)?.nome}`;
   }
 
   return (
@@ -375,12 +375,12 @@ function DrawerAlertas({ notas, filtro, onClose, onVerNota }) {
             <h2 className="font-bold text-gray-800">{titulo}</h2>
             <p className="text-xs text-gray-400 mt-0.5">{lista.length} nota(s)</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl font-light leading-none">◊</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl font-light leading-none">√ó</button>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {lista.length === 0 && (
             <div className="text-center py-12 text-gray-400">
-              <p className="text-3xl mb-2">?</p>
+              <p className="text-3xl mb-2">‚úÖ</p>
               <p className="text-sm">Nenhuma nota nesta categoria</p>
             </div>
           )}
@@ -393,7 +393,7 @@ function DrawerAlertas({ notas, filtro, onClose, onVerNota }) {
                 <span className="font-bold text-sm" style={{ color: n.valor > 25000 ? "#c0392b" : "#374151" }}>{fmtMoeda(n.valor)}</span>
               </div>
               <p className="font-semibold text-sm text-gray-800 truncate">{n.razaoSocial}</p>
-              <p className="text-xs text-gray-400 mt-0.5">NF {n.numNota} ï {EMPRESAS.find(e => e.id === n.empresa)?.nome}</p>
+              <p className="text-xs text-gray-400 mt-0.5">NF {n.numNota} ‚Ä¢ {EMPRESAS.find(e => e.id === n.empresa)?.nome}</p>
               <p className="text-xs mt-2 font-medium" style={{ color: "#E8450A" }}>{getProximoPasso(n)}</p>
               <div className="mt-2"><Badge status={n.status} /></div>
             </div>
@@ -410,12 +410,12 @@ function DrawerAlertas({ notas, filtro, onClose, onVerNota }) {
 function Dashboard({ notas, onVerNota, onIrParaPainel }) {
   const [drawerFiltro, setDrawerFiltro] = useState(null);
 
-  const ativas = notas.filter(n => !["DesembaraÁada", "Recusada"].includes(n.status));
+  const ativas = notas.filter(n => !["Desembara√ßada", "Recusada"].includes(n.status));
   const criticas = ativas.filter(n => n.qtdeDias >= 60);
   const atencao = ativas.filter(n => n.qtdeDias >= 25 && n.qtdeDias < 60);
   const acima25k = ativas.filter(n => n.valor > 25000);
   const aguardPag = ativas.filter(n => n.status === "Aguardando Pagamento");
-  const desembaracadas = notas.filter(n => n.status === "DesembaraÁada");
+  const desembaracadas = notas.filter(n => n.status === "Desembara√ßada");
   const totalCustos = notas.reduce((s, n) => s + (n.taxaReanalise || 0) + (n.taxaDesembaraco || 0) + (n.icmsAntecipado || 0) + (n.multa || 0) + (n.juros || 0), 0);
 
   const porEmpresa = EMPRESAS.map(e => ({
@@ -427,17 +427,17 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
   }));
 
   const cards = [
-    { label: "Notas CrÌticas", valor: criticas.length, sub: "60+ dias ï clique para ver", cor: "#c0392b", bg: "#fff0f0", icon: "??", filtro: "critico", clicavel: true },
-    { label: "AtenÁ„o", valor: atencao.length, sub: "25ñ59 dias ï clique para ver", cor: "#b7791f", bg: "#fffbeb", icon: "??", filtro: "atencao", clicavel: true },
-    { label: "Acima de R$ 25k", valor: acima25k.length, sub: "Risco multa 10% ï clique para ver", cor: "#7e3af2", bg: "#f5f3ff", icon: "??", filtro: "acima25k", clicavel: true },
-    { label: "Aguard. Pagamento", valor: aguardPag.length, sub: "Financeiro pendente ï clique para ver", cor: "#1a56db", bg: "#eff6ff", icon: "??", filtro: "pagamento", clicavel: true },
-    { label: "DesembaraÁadas", valor: desembaracadas.length, sub: "ConcluÌdas no perÌodo", cor: "#2d6a4f", bg: "#f0fdf4", icon: "?", filtro: null, clicavel: false },
-    { label: "Custos Registrados", valor: fmtMoeda(totalCustos), sub: "Taxas + ICMS + Multas", cor: "#E8450A", bg: "#fff7f0", icon: "??", filtro: null, clicavel: false },
+    { label: "Notas Cr√≠ticas", valor: criticas.length, sub: "60+ dias ‚Ä¢ clique para ver", cor: "#c0392b", bg: "#fff0f0", icon: "üî¥", filtro: "critico", clicavel: true },
+    { label: "Aten√ß√£o", valor: atencao.length, sub: "25‚Äì59 dias ‚Ä¢ clique para ver", cor: "#b7791f", bg: "#fffbeb", icon: "üü°", filtro: "atencao", clicavel: true },
+    { label: "Acima de R$ 25k", valor: acima25k.length, sub: "Risco multa 10% ‚Ä¢ clique para ver", cor: "#7e3af2", bg: "#f5f3ff", icon: "‚ö†Ô∏è", filtro: "acima25k", clicavel: true },
+    { label: "Aguard. Pagamento", valor: aguardPag.length, sub: "Financeiro pendente ‚Ä¢ clique para ver", cor: "#1a56db", bg: "#eff6ff", icon: "üí∞", filtro: "pagamento", clicavel: true },
+    { label: "Desembara√ßadas", valor: desembaracadas.length, sub: "Conclu√≠das no per√≠odo", cor: "#2d6a4f", bg: "#f0fdf4", icon: "‚úÖ", filtro: null, clicavel: false },
+    { label: "Custos Registrados", valor: fmtMoeda(totalCustos), sub: "Taxas + ICMS + Multas", cor: "#E8450A", bg: "#fff7f0", icon: "üìä", filtro: null, clicavel: false },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Cards resumo ó todos clic·veis onde aplic·vel */}
+      {/* Cards resumo ‚Äî todos clic√°veis onde aplic√°vel */}
       <div className="grid grid-cols-2 gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
         {cards.map((c, i) => (
           <div key={i}
@@ -448,7 +448,7 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
               <span className="text-2xl">{c.icon}</span>
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-black" style={{ color: c.cor }}>{c.valor}</span>
-                {c.clicavel && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: c.cor + "22", color: c.cor }}>ver ?</span>}
+                {c.clicavel && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: c.cor + "22", color: c.cor }}>ver ‚Üí</span>}
               </div>
             </div>
             <p className="font-semibold text-gray-700 mt-2 text-sm">{c.label}</p>
@@ -457,7 +457,7 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
         ))}
       </div>
 
-      {/* Por empresa ó cada linha clic·vel */}
+      {/* Por empresa ‚Äî cada linha clic√°vel */}
       <div className="rounded-2xl border p-5" style={{ borderColor: "#f0f0f0" }}>
         <h3 className="font-bold text-gray-700 mb-1 text-sm uppercase tracking-wide">Notas Ativas por Empresa</h3>
         <p className="text-xs text-gray-400 mb-4">Clique em uma empresa para ver as notas filtradas</p>
@@ -471,35 +471,35 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
                 <p className="font-semibold text-sm text-gray-800">{e.nome}</p>
                 <div className="flex items-center gap-3 mt-1">
                   <span className="text-xs text-gray-400">{e.total} nota(s) ativa(s)</span>
-                  {e.criticas > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600">{e.criticas} crÌtica(s)</span>}
-                  {e.atencao > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">{e.atencao} atenÁ„o</span>}
+                  {e.criticas > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600">{e.criticas} cr√≠tica(s)</span>}
+                  {e.atencao > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">{e.atencao} aten√ß√£o</span>}
                 </div>
               </div>
               <div className="text-right ml-3">
                 <p className="font-bold text-sm" style={{ color: "#E8450A" }}>{fmtMoeda(e.valor)}</p>
-                <p className="text-xs text-gray-400">em exposiÁ„o</p>
-                <p className="text-xs font-semibold mt-1" style={{ color: "#E8450A" }}>ver notas ?</p>
+                <p className="text-xs text-gray-400">em exposi√ß√£o</p>
+                <p className="text-xs font-semibold mt-1" style={{ color: "#E8450A" }}>ver notas ‚Üí</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Bot„o flutuante de alertas */}
+      {/* Bot√£o flutuante de alertas */}
       {(criticas.length > 0 || atencao.length > 0) && (
         <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-2 items-end">
           {criticas.length > 0 && (
             <button onClick={() => setDrawerFiltro("critico")}
               className="flex items-center gap-2 px-4 py-3 rounded-full text-white text-sm font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
               style={{ background: "#c0392b" }}>
-              ?? {criticas.length} nota(s) crÌtica(s)
+              üî¥ {criticas.length} nota(s) cr√≠tica(s)
             </button>
           )}
           {atencao.length > 0 && (
             <button onClick={() => setDrawerFiltro("atencao")}
               className="flex items-center gap-2 px-4 py-3 rounded-full text-sm font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
               style={{ background: "#b7791f", color: "white" }}>
-              ?? {atencao.length} nota(s) em atenÁ„o
+              üü° {atencao.length} nota(s) em aten√ß√£o
             </button>
           )}
         </div>
@@ -575,17 +575,17 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
   return (
     <div className="space-y-4">
 
-      {/* Banner de importaÁ„o destacado */}
+      {/* Banner de importa√ß√£o destacado */}
       <div className="rounded-2xl p-4 flex items-center justify-between" style={{ background: "#fff7f0", border: "2px dashed #E8450A" }}>
         <div>
-          <p className="font-bold text-sm" style={{ color: "#E8450A" }}>?? Importar arquivo do DTE</p>
+          <p className="font-bold text-sm" style={{ color: "#E8450A" }}>üì• Importar arquivo do DTE</p>
           <p className="text-xs text-gray-500 mt-0.5">
-            FaÁa upload do CSV/Excel exportado do DTE semanalmente.
-            {ultimaImportacao && <span className="ml-2 font-medium text-gray-600">⁄ltima importaÁ„o: {ultimaImportacao}</span>}
+            Fa√ßa upload do CSV/Excel exportado do DTE semanalmente.
+            {ultimaImportacao && <span className="ml-2 font-medium text-gray-600">√öltima importa√ß√£o: {ultimaImportacao}</span>}
           </p>
         </div>
         <label className="px-5 py-2.5 rounded-xl text-sm font-bold text-white cursor-pointer whitespace-nowrap ml-4 hover:opacity-90 transition-opacity" style={{ background: "#E8450A" }}>
-          ? Selecionar Arquivo
+          ‚¨Ü Selecionar Arquivo
           <input type="file" accept=".csv,.xlsx" className="hidden" onChange={handleFile} />
         </label>
       </div>
@@ -595,13 +595,13 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
         <div className="flex items-center justify-between">
           <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Filtros</p>
           {temFiltroAtivo && (
-            <button onClick={limparFiltros} className="text-xs font-semibold" style={{ color: "#E8450A" }}>? Limpar filtros</button>
+            <button onClick={limparFiltros} className="text-xs font-semibold" style={{ color: "#E8450A" }}>‚úï Limpar filtros</button>
           )}
         </div>
 
         {/* Linha 1: busca + empresa + status + prazo */}
         <div className="flex flex-wrap gap-2">
-          <input placeholder="?? Buscar fornecedor, NF ou chave..." value={filtros.busca} onChange={e => setF("busca", e.target.value)}
+          <input placeholder="üîç Buscar fornecedor, NF ou chave..." value={filtros.busca} onChange={e => setF("busca", e.target.value)}
             className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb", minWidth: 240 }} />
           <select value={filtros.empresa} onChange={e => setF("empresa", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
             <option value="">Todas as empresas</option>
@@ -613,9 +613,9 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
           </select>
           <select value={filtros.dias} onChange={e => setF("dias", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
             <option value="">Todos os prazos</option>
-            <option value="critico">?? CrÌtico (60+ dias)</option>
-            <option value="atencao">?? AtenÁ„o (25-59 dias)</option>
-            <option value="ok">?? OK (0-24 dias)</option>
+            <option value="critico">üî¥ Cr√≠tico (60+ dias)</option>
+            <option value="atencao">üü° Aten√ß√£o (25-59 dias)</option>
+            <option value="ok">üü¢ OK (0-24 dias)</option>
           </select>
         </div>
 
@@ -624,8 +624,8 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
           <p className="text-xs font-semibold text-gray-500">Filtrar por data:</p>
           <select value={filtros.tipoData} onChange={e => setF("tipoData", e.target.value)}
             className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
-            <option value="emissao">Data de Emiss„o</option>
-            <option value="importacao">Data de ImportaÁ„o</option>
+            <option value="emissao">Data de Emiss√£o</option>
+            <option value="importacao">Data de Importa√ß√£o</option>
           </select>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400">De</span>
@@ -642,7 +642,7 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
               }}
               className="border rounded-lg px-3 py-2 text-sm bg-white w-32" style={{ borderColor: filtros.dtDe.length === 10 ? "#E8450A" : "#e5e7eb" }}
             />
-            <span className="text-xs text-gray-400">AtÈ</span>
+            <span className="text-xs text-gray-400">At√©</span>
             <input
               type="text"
               placeholder="DD/MM/AAAA"
@@ -662,7 +662,7 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
 
       <p className="text-xs text-gray-400 px-1">
         {filtradas.length} nota(s) encontrada(s)
-        {temFiltroAtivo && <span className="ml-2 font-semibold" style={{ color: "#E8450A" }}>ï filtros ativos</span>}
+        {temFiltroAtivo && <span className="ml-2 font-semibold" style={{ color: "#E8450A" }}>‚Ä¢ filtros ativos</span>}
       </p>
 
       {/* Tabela */}
@@ -671,7 +671,7 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: "#f8f9fa" }}>
-                {["Empresa", "Fornecedor", "NF", "CFOP", "Dt. Emiss„o", "Valor", "Dias", "Status", "Centro Custo", "PrÛximo Passo", ""].map(h => (
+                {["Empresa", "Fornecedor", "NF", "CFOP", "Dt. Emiss√£o", "Valor", "Dias", "Status", "Centro Custo", "Pr√≥ximo Passo", ""].map(h => (
                   <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -690,7 +690,7 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
                   <td className="px-3 py-3 text-xs font-bold whitespace-nowrap" style={{ color: n.valor > 25000 ? "#c0392b" : "#374151" }}>{fmtMoeda(n.valor)}</td>
                   <td className="px-3 py-3"><AlertBadge dias={n.qtdeDias} /></td>
                   <td className="px-3 py-3"><Badge status={n.status} /></td>
-                  <td className="px-3 py-3 text-xs text-gray-500">{n.centroCusto || <span className="text-gray-300">ó</span>}</td>
+                  <td className="px-3 py-3 text-xs text-gray-500">{n.centroCusto || <span className="text-gray-300">‚Äî</span>}</td>
                   <td className="px-3 py-3 text-xs text-gray-500 max-w-xs">
                     <span className="truncate block" title={getProximoPasso(n)}>{getProximoPasso(n)}</span>
                   </td>
@@ -705,7 +705,7 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
           </table>
           {filtradas.length === 0 && (
             <div className="text-center py-12 text-gray-400">
-              <p className="text-4xl mb-2">??</p>
+              <p className="text-4xl mb-2">üìã</p>
               <p>Nenhuma nota encontrada com os filtros selecionados</p>
             </div>
           )}
@@ -716,7 +716,7 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
 }
 
 // ============================================================
-// SVG TORRES DE TRANSMISS√O (background decorativo)
+// SVG TORRES DE TRANSMISS√ÉO (background decorativo)
 // ============================================================
 function TorresSVG() {
   return (
@@ -751,7 +751,7 @@ function TorresSVG() {
         <line x1="0" y1="50" x2="80" y2="50" stroke="#E8450A" strokeWidth="2.5"/>
         <line x1="-5" y1="25" x2="85" y2="25" stroke="#E8450A" strokeWidth="2.5"/>
       </g>
-      {/* Torre 3 ó maior, central */}
+      {/* Torre 3 ‚Äî maior, central */}
       <g transform="translate(500,0)">
         <line x1="50" y1="0" x2="22" y2="300" stroke="#E8450A" strokeWidth="3.5"/>
         <line x1="50" y1="0" x2="78" y2="300" stroke="#E8450A" strokeWidth="3.5"/>
@@ -791,7 +791,7 @@ function TorresSVG() {
 }
 
 // ============================================================
-// TELA: RELAT”RIOS
+// TELA: RELAT√ìRIOS
 // ============================================================
 function Relatorios({ notas }) {
   const [periodo, setPeriodo] = useState("mensal");
@@ -861,14 +861,14 @@ function Relatorios({ notas }) {
       {/* Filtros */}
       <div className="rounded-2xl border p-4 space-y-3" style={{ borderColor: "#f0f0f0", background: "#fafafa" }}>
         <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Filtros do RelatÛrio</p>
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Filtros do Relat√≥rio</p>
           <div className="flex items-center gap-3">
-            {temFiltro && <button onClick={limpar} className="text-xs font-semibold" style={{ color: "#E8450A" }}>? Limpar</button>}
+            {temFiltro && <button onClick={limpar} className="text-xs font-semibold" style={{ color: "#E8450A" }}>‚úï Limpar</button>}
             <div className="flex gap-2">
               <button className="px-4 py-2 rounded-lg text-sm font-semibold border" style={{ borderColor: "#E8450A", color: "#E8450A" }}
-                onClick={() => alert("ExportaÁ„o Excel ó disponÌvel na vers„o com backend")}>?? Excel</button>
+                onClick={() => alert("Exporta√ß√£o Excel ‚Äî dispon√≠vel na vers√£o com backend")}>üìä Excel</button>
               <button className="px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}
-                onClick={() => alert("ExportaÁ„o PDF ó disponÌvel na vers„o com backend")}>?? PDF</button>
+                onClick={() => alert("Exporta√ß√£o PDF ‚Äî dispon√≠vel na vers√£o com backend")}>üìÑ PDF</button>
             </div>
           </div>
         </div>
@@ -880,7 +880,7 @@ function Relatorios({ notas }) {
             <option value="mensal">Mensal</option>
             <option value="trimestral">Trimestral</option>
           </select>
-          <input placeholder="?? Buscar fornecedor ou NF..." value={busca} onChange={e => setBusca(e.target.value)}
+          <input placeholder="üîç Buscar fornecedor ou NF..." value={busca} onChange={e => setBusca(e.target.value)}
             className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb", minWidth: 200 }} />
           <select value={empresa} onChange={e => setEmpresa(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
             <option value="">Todas as empresas</option>
@@ -896,43 +896,43 @@ function Relatorios({ notas }) {
           </select>
           <select value={dias} onChange={e => setDias(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
             <option value="">Todos os prazos</option>
-            <option value="critico">?? CrÌtico (60+)</option>
-            <option value="atencao">?? AtenÁ„o (25-59)</option>
-            <option value="ok">?? OK (0-24)</option>
+            <option value="critico">üî¥ Cr√≠tico (60+)</option>
+            <option value="atencao">üü° Aten√ß√£o (25-59)</option>
+            <option value="ok">üü¢ OK (0-24)</option>
           </select>
         </div>
 
         {/* Linha 2: datas */}
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-xs font-semibold text-gray-500">PerÌodo:</p>
+          <p className="text-xs font-semibold text-gray-500">Per√≠odo:</p>
           <select value={tipoData} onChange={e => setTipoData(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
-            <option value="emissao">Data de Emiss„o</option>
-            <option value="importacao">Data de ImportaÁ„o</option>
+            <option value="emissao">Data de Emiss√£o</option>
+            <option value="importacao">Data de Importa√ß√£o</option>
           </select>
           <span className="text-xs text-gray-400">De</span>
           <input type="text" placeholder="DD/MM/AAAA" value={dtDe} maxLength={10} onChange={fmtDateInput(setDtDe)}
             className="border rounded-lg px-3 py-2 text-sm bg-white w-32" style={{ borderColor: dtDe.length===10 ? "#E8450A" : "#e5e7eb" }} />
-          <span className="text-xs text-gray-400">AtÈ</span>
+          <span className="text-xs text-gray-400">At√©</span>
           <input type="text" placeholder="DD/MM/AAAA" value={dtAte} maxLength={10} onChange={fmtDateInput(setDtAte)}
             className="border rounded-lg px-3 py-2 text-sm bg-white w-32" style={{ borderColor: dtAte.length===10 ? "#E8450A" : "#e5e7eb" }} />
-          <span className="text-xs text-gray-400 ml-2">{filtradas.length} nota(s) no relatÛrio{temFiltro && <span className="font-semibold" style={{ color: "#E8450A" }}> ï filtros ativos</span>}</span>
+          <span className="text-xs text-gray-400 ml-2">{filtradas.length} nota(s) no relat√≥rio{temFiltro && <span className="font-semibold" style={{ color: "#E8450A" }}> ‚Ä¢ filtros ativos</span>}</span>
         </div>
       </div>
 
-      {/* RelatÛrio */}
+      {/* Relat√≥rio */}
       <div className="rounded-2xl border p-6" style={{ borderColor: "#f0f0f0" }}>
         <div className="flex items-center justify-between mb-1">
-          <h3 className="font-bold text-gray-700 uppercase tracking-wide text-sm">RelatÛrio Gerencial ó {periodo.charAt(0).toUpperCase() + periodo.slice(1)}</h3>
+          <h3 className="font-bold text-gray-700 uppercase tracking-wide text-sm">Relat√≥rio Gerencial ‚Äî {periodo.charAt(0).toUpperCase() + periodo.slice(1)}</h3>
         </div>
-        <p className="text-xs text-gray-400 mb-5">{empresa ? EMPRESAS.find(e => e.id === empresa)?.nome : "Todas as empresas"} {dtDe && `ï De ${dtDe}`} {dtAte && `AtÈ ${dtAte}`}</p>
+        <p className="text-xs text-gray-400 mb-5">{empresa ? EMPRESAS.find(e => e.id === empresa)?.nome : "Todas as empresas"} {dtDe && `‚Ä¢ De ${dtDe}`} {dtAte && `At√© ${dtAte}`}</p>
 
         <div className="grid grid-cols-2 gap-4 mb-6" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
           {[
             { label: "Total de Notas", valor: filtradas.length, cor: "#374151" },
-            { label: "Notas Ativas", valor: filtradas.filter(n => !["DesembaraÁada", "Recusada"].includes(n.status)).length, cor: "#1a56db" },
-            { label: "DesembaraÁadas", valor: filtradas.filter(n => n.status === "DesembaraÁada").length, cor: "#2d6a4f" },
+            { label: "Notas Ativas", valor: filtradas.filter(n => !["Desembara√ßada", "Recusada"].includes(n.status)).length, cor: "#1a56db" },
+            { label: "Desembara√ßadas", valor: filtradas.filter(n => n.status === "Desembara√ßada").length, cor: "#2d6a4f" },
             { label: "Recusadas", valor: filtradas.filter(n => n.status === "Recusada").length, cor: "#c0392b" },
-            { label: "CrÌticas (60+d)", valor: filtradas.filter(n => n.qtdeDias >= 60 && !["DesembaraÁada","Recusada"].includes(n.status)).length, cor: "#c0392b" },
+            { label: "Cr√≠ticas (60+d)", valor: filtradas.filter(n => n.qtdeDias >= 60 && !["Desembara√ßada","Recusada"].includes(n.status)).length, cor: "#c0392b" },
             { label: "Acima R$25k", valor: filtradas.filter(n => n.valor > 25000).length, cor: "#7e3af2" },
           ].map((c, i) => (
             <div key={i} className="p-4 rounded-xl" style={{ background: "#f8f9fa" }}>
@@ -945,7 +945,7 @@ function Relatorios({ notas }) {
         <h4 className="font-semibold text-gray-600 mb-3 text-sm">Breakdown de Custos</h4>
         <div className="space-y-2 mb-6">
           {[
-            { label: "Taxas (Rean·lise + DesembaraÁo)", valor: totalTaxas },
+            { label: "Taxas (Rean√°lise + Desembara√ßo)", valor: totalTaxas },
             { label: "ICMS Antecipado", valor: totalICMS },
             { label: "Multas", valor: totalMultas },
             { label: "Juros", valor: totalJuros },
@@ -1025,7 +1025,7 @@ function ModalEmpresa({ empresa, onClose, onSalvar }) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md m-4">
         <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "#f0f0f0" }}>
           <h2 className="font-bold text-gray-800">{isNova ? "Nova Empresa" : "Editar Empresa"}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl font-light">◊</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl font-light">√ó</button>
         </div>
         <div className="p-5 space-y-4">
           <div>
@@ -1034,16 +1034,16 @@ function ModalEmpresa({ empresa, onClose, onSalvar }) {
               className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase">InscriÁ„o Estadual (IE)</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase">Inscri√ß√£o Estadual (IE)</label>
             <input value={form.inscricao} onChange={e => set("inscricao", e.target.value)} placeholder="Ex: 04.235.429-3"
               className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
-            <p className="text-xs text-gray-400 mt-1">Usada para identificaÁ„o autom·tica no upload do CSV.</p>
+            <p className="text-xs text-gray-400 mt-1">Usada para identifica√ß√£o autom√°tica no upload do CSV.</p>
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase">CNPJ</label>
             <input value={form.cnpj} onChange={e => set("cnpj", e.target.value)} placeholder="Ex: 07.791.042/0002-18"
               className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
-            <p className="text-xs text-gray-400 mt-1">TambÈm usado para identificaÁ„o autom·tica no upload.</p>
+            <p className="text-xs text-gray-400 mt-1">Tamb√©m usado para identifica√ß√£o autom√°tica no upload.</p>
           </div>
           <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: "#f8f9fa" }}>
             <span className="text-sm text-gray-700 flex-1">Empresa Ativa</span>
@@ -1061,7 +1061,7 @@ function ModalEmpresa({ empresa, onClose, onSalvar }) {
         <div className="flex justify-end gap-3 p-5 border-t" style={{ borderColor: "#f0f0f0" }}>
           <button onClick={onClose} className="px-4 py-2 rounded-lg border text-sm text-gray-600 hover:bg-gray-50" style={{ borderColor: "#e5e7eb" }}>Cancelar</button>
           <button onClick={salvar} className="px-6 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}>
-            {isNova ? "Adicionar Empresa" : "Salvar AlteraÁıes"}
+            {isNova ? "Adicionar Empresa" : "Salvar Altera√ß√µes"}
           </button>
         </div>
       </div>
@@ -1070,7 +1070,7 @@ function ModalEmpresa({ empresa, onClose, onSalvar }) {
 }
 
 // ============================================================
-// MODAL CONFIRMA«√O EMPRESA NO IMPORT
+// MODAL CONFIRMA√á√ÉO EMPRESA NO IMPORT
 // ============================================================
 function ModalConfirmImport({ notasParaImportar, empresas, onConfirmar, onCancelar, usuarioNome, fileName }) {
   // agrupa por CNPJ detectado do arquivo
@@ -1106,16 +1106,16 @@ function ModalConfirmImport({ notasParaImportar, empresas, onConfirmar, onCancel
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)" }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg m-4 max-h-screen overflow-y-auto">
         <div className="p-5 border-b" style={{ borderColor: "#f0f0f0" }}>
-          <h2 className="font-bold text-gray-800">Confirmar ImportaÁ„o</h2>
+          <h2 className="font-bold text-gray-800">Confirmar Importa√ß√£o</h2>
           <p className="text-xs text-gray-400 mt-1">{notasParaImportar.length} nota(s) novas encontradas em <span className="font-semibold">{fileName}</span></p>
         </div>
         <div className="p-5 space-y-4">
-          <p className="text-sm text-gray-600">Verifique a empresa identificada para cada CNPJ do arquivo. Corrija se necess·rio antes de importar.</p>
+          <p className="text-sm text-gray-600">Verifique a empresa identificada para cada CNPJ do arquivo. Corrija se necess√°rio antes de importar.</p>
           {grupos.map(g => (
             <div key={g.cnpj} className="p-4 rounded-xl border" style={{ borderColor: g.empresaId ? "#d1fae5" : "#fde68a", background: g.empresaId ? "#f0fdf4" : "#fffbeb" }}>
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: g.empresaId ? "#d1fae5" : "#fde68a", color: g.empresaId ? "#065f46" : "#92400e" }}>
-                  {g.empresaId ? "? Identificado" : "?? N„o identificado"}
+                  {g.empresaId ? "‚úÖ Identificado" : "‚ö†Ô∏è N√£o identificado"}
                 </span>
                 <span className="text-xs text-gray-500 font-mono">{g.cnpj}</span>
                 <span className="text-xs text-gray-400">({g.notas.length} nota{g.notas.length > 1 ? "s" : ""})</span>
@@ -1125,7 +1125,7 @@ function ModalConfirmImport({ notasParaImportar, empresas, onConfirmar, onCancel
                 className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}>
                 <option value="">Selecione a empresa...</option>
                 {empresas.filter(e => e.ativa).map(e => (
-                  <option key={e.id} value={e.id}>{e.nome} ó IE: {e.inscricao}</option>
+                  <option key={e.id} value={e.id}>{e.nome} ‚Äî IE: {e.inscricao}</option>
                 ))}
               </select>
             </div>
@@ -1146,7 +1146,7 @@ function ModalConfirmImport({ notasParaImportar, empresas, onConfirmar, onCancel
 }
 
 // ============================================================
-// TELA: CONFIGURA«’ES
+// TELA: CONFIGURA√á√ïES
 // ============================================================
 function Configuracoes({ usuarios, onSalvarUsuario, logoUrl, onSalvarLogo, empresas, onSalvarEmpresa }) {
   const [novoNome, setNovoNome] = useState("");
@@ -1168,7 +1168,7 @@ function Configuracoes({ usuarios, onSalvarUsuario, logoUrl, onSalvarLogo, empre
       {/* Logo */}
       <div className="rounded-2xl border p-5" style={{ borderColor: "#f0f0f0" }}>
         <h3 className="font-bold text-gray-700 mb-4 text-sm uppercase tracking-wide">Logo do Sistema</h3>
-        <p className="text-xs text-gray-400 mb-4">Aparece na sidebar e ser· incluÌda nos relatÛrios exportados.</p>
+        <p className="text-xs text-gray-400 mb-4">Aparece na sidebar e ser√° inclu√≠da nos relat√≥rios exportados.</p>
         <div className="flex items-center gap-5">
           <div className="w-40 h-20 rounded-xl border flex items-center justify-center overflow-hidden" style={{ borderColor: "#e5e7eb", background: "#1a1a1a" }}>
             {logoUrl ? <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain p-2" />
@@ -1176,7 +1176,7 @@ function Configuracoes({ usuarios, onSalvarUsuario, logoUrl, onSalvarLogo, empre
           </div>
           <div>
             <label className="px-4 py-2 rounded-lg text-sm font-semibold text-white cursor-pointer inline-block" style={{ background: "#E8450A" }}>
-              ?? Alterar Logo
+              üì∑ Alterar Logo
               <input type="file" accept="image/*" className="hidden" onChange={handleLogo} />
             </label>
             {logoUrl && <button onClick={() => onSalvarLogo(null)} className="ml-3 text-xs text-gray-400 hover:text-red-500">Remover</button>}
@@ -1188,13 +1188,13 @@ function Configuracoes({ usuarios, onSalvarUsuario, logoUrl, onSalvarLogo, empre
       {/* Empresas */}
       <div className="rounded-2xl border p-5" style={{ borderColor: "#f0f0f0" }}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wide">Empresas / InscriÁıes Estaduais</h3>
+          <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wide">Empresas / Inscri√ß√µes Estaduais</h3>
           <button onClick={() => setModalEmpresa({})}
             className="px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}>
             + Nova Empresa
           </button>
         </div>
-        <p className="text-xs text-gray-400 mb-4">O CNPJ e a IE s„o usados para identificar automaticamente a empresa durante o upload do CSV.</p>
+        <p className="text-xs text-gray-400 mb-4">O CNPJ e a IE s√£o usados para identificar automaticamente a empresa durante o upload do CSV.</p>
         <div className="space-y-3">
           {empresas.map(e => (
             <div key={e.id} className="flex items-center justify-between p-4 rounded-xl" style={{ background: "#f8f9fa", border: "1px solid #f0f0f0" }}>
@@ -1212,16 +1212,16 @@ function Configuracoes({ usuarios, onSalvarUsuario, logoUrl, onSalvarLogo, empre
               </div>
               <button onClick={() => setModalEmpresa(e)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold border ml-3" style={{ borderColor: "#e5e7eb", color: "#374151" }}>
-                ?? Editar
+                ‚úèÔ∏è Editar
               </button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Usu·rios */}
+      {/* Usu√°rios */}
       <div className="rounded-2xl border p-5" style={{ borderColor: "#f0f0f0" }}>
-        <h3 className="font-bold text-gray-700 mb-4 text-sm uppercase tracking-wide">Usu·rios</h3>
+        <h3 className="font-bold text-gray-700 mb-4 text-sm uppercase tracking-wide">Usu√°rios</h3>
         <div className="space-y-2 mb-5">
           {usuarios.map(u => (
             <div key={u.id} className="flex items-center justify-between p-3 rounded-xl" style={{ background: "#f8f9fa" }}>
@@ -1236,7 +1236,7 @@ function Configuracoes({ usuarios, onSalvarUsuario, logoUrl, onSalvarLogo, empre
             </div>
           ))}
         </div>
-        <h4 className="text-sm font-semibold text-gray-600 mb-3">Adicionar Usu·rio</h4>
+        <h4 className="text-sm font-semibold text-gray-600 mb-3">Adicionar Usu√°rio</h4>
         <div className="grid grid-cols-2 gap-3">
           <input placeholder="Nome completo" value={novoNome} onChange={e => setNovoNome(e.target.value)} className="border rounded-lg px-3 py-2 text-sm col-span-2" style={{ borderColor: "#e5e7eb" }} />
           <input placeholder="E-mail" value={novoEmail} onChange={e => setNovoEmail(e.target.value)} className="border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
@@ -1246,7 +1246,7 @@ function Configuracoes({ usuarios, onSalvarUsuario, logoUrl, onSalvarLogo, empre
           </select>
           <button onClick={() => { if (novoNome && novoEmail) { onSalvarUsuario({ id: Date.now().toString(), nome: novoNome, email: novoEmail, perfil: novoPerfil }); setNovoNome(""); setNovoEmail(""); } }}
             className="col-span-2 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}>
-            Adicionar Usu·rio
+            Adicionar Usu√°rio
           </button>
         </div>
       </div>
@@ -1283,7 +1283,7 @@ export default function App() {
   // ---- CARREGAR DADOS DO SUPABASE ----
   useEffect(() => {
     carregarTudo();
-    // Realtime: atualiza automaticamente quando outro usu·rio mudar dados
+    // Realtime: atualiza automaticamente quando outro usu√°rio mudar dados
     const canal = supabase
       .channel("realtime-notas")
       .on("postgres_changes", { event: "*", schema: "public", table: "notas" }, () => carregarNotas())
@@ -1412,12 +1412,12 @@ export default function App() {
         });
       }
       if (novasNotas.length === 0) {
-        alert("Todas as notas do arquivo j· est„o no sistema.");
+        alert("Todas as notas do arquivo j√° est√£o no sistema.");
         return;
       }
       setImportPendente({ notas: novasNotas, fileName });
     } catch (e) {
-      alert("Erro ao processar o arquivo. Verifique se È um CSV exportado do DTE.");
+      alert("Erro ao processar o arquivo. Verifique se √© um CSV exportado do DTE.");
     }
   };
 
@@ -1431,20 +1431,20 @@ export default function App() {
       setUltimaImportacao(agora);
       setImportPendente(null);
       await carregarNotas();
-      alert(`? ${notasFinais.length} nota(s) importada(s) com sucesso!`);
+      alert(`‚úÖ ${notasFinais.length} nota(s) importada(s) com sucesso!`);
     } catch (e) {
       alert("Erro inesperado: " + e.message);
     }
   };
 
-  const notasAtivas = notas.filter(n => !["DesembaraÁada", "Recusada"].includes(n.status));
+  const notasAtivas = notas.filter(n => !["Desembara√ßada", "Recusada"].includes(n.status));
   const criticas = notasAtivas.filter(n => n.qtdeDias >= 60).length;
 
   const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: "??" },
-    { id: "notas", label: "Painel de Notas", icon: "??" },
-    { id: "relatorios", label: "RelatÛrios", icon: "??" },
-    { id: "configuracoes", label: "ConfiguraÁıes", icon: "??" },
+    { id: "dashboard", label: "Dashboard", icon: "üìä" },
+    { id: "notas", label: "Painel de Notas", icon: "üìã" },
+    { id: "relatorios", label: "Relat√≥rios", icon: "üìà" },
+    { id: "configuracoes", label: "Configura√ß√µes", icon: "‚öôÔ∏è" },
   ];
 
   if (carregando) {
@@ -1478,7 +1478,7 @@ export default function App() {
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-lg" style={{ background: "#E8450A" }}>E</div>
                 <div>
                   <p className="font-bold text-sm" style={{color:"#b84a00"}}>Enerwatt</p>
-                  <p className="text-xs" style={{ color: "#E8450A" }}>Gest„o DTE/AM</p>
+                  <p className="text-xs" style={{ color: "#E8450A" }}>Gest√£o DTE/AM</p>
                 </div>
               </div>
             )}
@@ -1514,12 +1514,12 @@ export default function App() {
             <h1 className="font-black text-gray-800 text-lg">
               {navItems.find(n => n.id === tela)?.icon} {navItems.find(n => n.id === tela)?.label}
             </h1>
-            <p className="text-xs text-gray-400">Sistema de Controle ó DesembaraÁo Extempor‚neo DTE/AM</p>
+            <p className="text-xs text-gray-400">Sistema de Controle ‚Äî Desembara√ßo Extempor√¢neo DTE/AM</p>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-gray-400 hidden sm:block">06/03/2026</span>
             {criticas > 0 && (
-              <span className="text-xs font-bold px-3 py-1 rounded-full text-white" style={{ background: "#c0392b" }}>?? {criticas} crÌtica(s)</span>
+              <span className="text-xs font-bold px-3 py-1 rounded-full text-white" style={{ background: "#c0392b" }}>üî¥ {criticas} cr√≠tica(s)</span>
             )}
           </div>
         </header>
