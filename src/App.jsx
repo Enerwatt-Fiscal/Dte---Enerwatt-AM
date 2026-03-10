@@ -1,0 +1,1550 @@
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "./supabase";
+
+// ============================================================
+// DADOS INICIAIS — importados dos CSVs das 3 empresas
+// ============================================================
+const EMPRESAS_INICIAIS = [
+  { id: "filial02", nome: "FILIAL 02 - MANAUS", inscricao: "04.235.429-3", cnpj: "07.791.042/0002-18", ativa: true },
+  { id: "filial13", nome: "FILIAL 13 - MLA", inscricao: "04.235.429-X", cnpj: "07.791.042/0013-00", ativa: true },
+  { id: "linhasnorte", nome: "LINHAS DO NORTE", inscricao: "04.235.429-Y", cnpj: "00.000.000/0001-00", ativa: true },
+];
+// Alias global para compatibilidade (será sobrescrito pelo estado do App via prop)
+let EMPRESAS = EMPRESAS_INICIAIS;
+
+const FINALIDADES = ["Uso/Consumo", "Industrialização", "Revenda", "Remessa/Transferência", "Não Identificado"];
+const STATUS_LIST = ["Identificada", "Em Reanálise", "Aguardando Pagamento", "Aguarda Email SEFAZ", "Desembaraço Solicitado", "Desembaraçada", "Recusada", "Postergada"];
+
+function parseValor(v) {
+  if (!v) return 0;
+  return parseFloat(v.replace(/\./g, "").replace(",", ".")) || 0;
+}
+
+function parseDateBR(d) {
+  if (!d || d === "-") return null;
+  const [dia, mes, ano] = d.split("/");
+  return new Date(`${ano}-${mes}-${dia}`);
+}
+
+function diffDias(dataEmissao) {
+  if (!dataEmissao) return 0;
+  const hoje = new Date("2026-03-06");
+  return Math.floor((hoje - dataEmissao) / (1000 * 60 * 60 * 24));
+}
+
+const NOTAS_INICIAIS = [
+  // FILIAL 02 - MANAUS
+  { id: "1", empresa: "filial02", fornecedor: "02.677.045/0002-01", razaoSocial: "HORUS TELECOMUNICACOES LTDA", numNota: "184028", cfop: "6102", dtEmissao: "07/01/2026", dtApresentacao: "-", chave: "52260102677045000201552110001840281230738747", valor: 3623.50, qtdeDias: 58, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "2", empresa: "filial02", fornecedor: "02.677.045/0002-01", razaoSocial: "HORUS TELECOMUNICACOES LTDA", numNota: "184154", cfop: "6102", dtEmissao: "12/01/2026", dtApresentacao: "-", chave: "52260102677045000201552110001841541263066581", valor: 6197.64, qtdeDias: 53, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "3", empresa: "filial02", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5327", cfop: "6554", dtEmissao: "12/01/2026", dtApresentacao: "-", chave: "52260107791042000137550010000053271163320077", valor: 240000.00, qtdeDias: 53, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "4", empresa: "filial02", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5332", cfop: "6554", dtEmissao: "19/01/2026", dtApresentacao: "-", chave: "52260107791042000137550010000053321351857147", valor: 97000.00, qtdeDias: 46, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "5", empresa: "filial02", fornecedor: "26.502.220/0001-07", razaoSocial: "Engecomp Consultoria e Locacao de Sistemas Ltda", numNota: "2064", cfop: "6908", dtEmissao: "19/01/2026", dtApresentacao: "-", chave: "35260126502220000107550010000020641140106616", valor: 1200.00, qtdeDias: 46, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "6", empresa: "filial02", fornecedor: "01.816.875/0001-29", razaoSocial: "AJEL MATERIAIS ELETRICOS LTDA", numNota: "1045837", cfop: "6110", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "52260101816875000129550010010458371541541030", valor: 1190.05, qtdeDias: 35, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "7", empresa: "filial02", fornecedor: "35.784.562/0001-58", razaoSocial: "ADR COMERCIO DE EQUIPAMENTOS DE INFORMATICA EIRELI", numNota: "13254", cfop: "6102", dtEmissao: "09/02/2026", dtApresentacao: "-", chave: "35260235784562000158550010000132541666574003", valor: 6130.00, qtdeDias: 25, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "8", empresa: "filial02", fornecedor: "13.087.023/0001-27", razaoSocial: "BRASFORMER PRODUTOS ELETRICOS LTDA", numNota: "10154", cfop: "6109", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "35260213087023000127550010000101541201141316", valor: 3745.10, qtdeDias: 14, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  // FILIAL 13 - MLA
+  { id: "9", empresa: "filial13", fornecedor: "07.791.042/0007-22", razaoSocial: "ENERWATT ENGENHARIA, INDUSTRIA E COMERCIO - EIRELI", numNota: "1702", cfop: "6151", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "35260107791042000722550010000017021171724335", valor: 4272.61, qtdeDias: 35, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "10", empresa: "filial13", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5364", cfop: "6554", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "52260207791042000137550010000053641305471689", valor: 4509.90, qtdeDias: 18, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "11", empresa: "filial13", fornecedor: "02.341.470/0001-44", razaoSocial: "Boa Vista Energia S/A", numNota: "1017", cfop: "6915", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "14260202341470000144550020000010171311612194", valor: 99610.55, qtdeDias: 14, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "12", empresa: "filial13", fornecedor: "02.341.470/0001-44", razaoSocial: "Boa Vista Energia S/A", numNota: "1016", cfop: "6915", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "14260202341470000144550020000010161341856914", valor: 172410.30, qtdeDias: 14, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  // LINHAS DO NORTE
+  { id: "13", empresa: "linhasnorte", fornecedor: "10.159.093/0002-36", razaoSocial: "VIMEZER FORN DE SERV LTDA", numNota: "886481", cfop: "6403", dtEmissao: "17/01/2026", dtApresentacao: "-", chave: "14260110159093000236550010008864811598662666", valor: 9030.00, qtdeDias: 48, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "14", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "939", cfop: "6103", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260101200900000145550010000009391300001762", valor: 7357.00, qtdeDias: 44, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "15", empresa: "linhasnorte", fornecedor: "02.905.133/0001-32", razaoSocial: "CABEXPRESS IND.COM.DE CABOS ELET.", numNota: "43738", cfop: "6101", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "35260102905133000132550010000437381888458950", valor: 6762.24, qtdeDias: 44, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "16", empresa: "linhasnorte", fornecedor: "09.296.337/0001-62", razaoSocial: "C. COMERCIO CONSTRUCAO SERVICOS LTDA", numNota: "2816", cfop: "6102", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260109296337000162550010000028161380042518", valor: 1600.00, qtdeDias: 44, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "17", empresa: "linhasnorte", fornecedor: "09.296.337/0001-62", razaoSocial: "C. COMERCIO CONSTRUCAO SERVICOS LTDA", numNota: "2815", cfop: "6102", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260109296337000162550010000028151518643526", valor: 800.00, qtdeDias: 44, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "18", empresa: "linhasnorte", fornecedor: "10.159.093/0002-36", razaoSocial: "VIMEZER FORN DE SERV LTDA", numNota: "887052", cfop: "6403", dtEmissao: "26/01/2026", dtApresentacao: "-", chave: "14260110159093000236550010008870521446156556", valor: 1210.00, qtdeDias: 39, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "19", empresa: "linhasnorte", fornecedor: "62.384.763/0001-30", razaoSocial: "CIVITELLA E CIA LTDA", numNota: "18531", cfop: "6101", dtEmissao: "26/01/2026", dtApresentacao: "-", chave: "35260162384763000130550000000185311023587016", valor: 14031.89, qtdeDias: 39, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "20", empresa: "linhasnorte", fornecedor: "10.159.093/0007-40", razaoSocial: "VIMEZER FORNC. DE SERV. LTDA", numNota: "2259", cfop: "6403", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "14260110159093000740550010000022591912085940", valor: 1055.00, qtdeDias: 35, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "21", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "954", cfop: "6103", dtEmissao: "04/02/2026", dtApresentacao: "-", chave: "14260201200900000145550010000009541300001916", valor: 11023.00, qtdeDias: 30, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "22", empresa: "linhasnorte", fornecedor: "05.059.252/0001-00", razaoSocial: "MOURAO E LIRA LTDA - EPP", numNota: "27692", cfop: "6102", dtEmissao: "04/02/2026", dtApresentacao: "-", chave: "14260205059252000100550010000276921095977758", valor: 1894.60, qtdeDias: 30, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "23", empresa: "linhasnorte", fornecedor: "19.215.087/0002-23", razaoSocial: "MARTINS & SA LTDA ME", numNota: "2109", cfop: "6102", dtEmissao: "05/02/2026", dtApresentacao: "-", chave: "14260219215087000223550010000021091182559020", valor: 7134.00, qtdeDias: 29, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "24", empresa: "linhasnorte", fornecedor: "10.159.093/0001-55", razaoSocial: "VIMEZER FORN. DE SERV. LTDA", numNota: "193912", cfop: "6403", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260210159093000155550010001939121384724670", valor: 75.00, qtdeDias: 23, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "25", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4125", cfop: "6102", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041251344287275", valor: 112.00, qtdeDias: 23, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "26", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4124", cfop: "6102", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041241335350698", valor: 1073.00, qtdeDias: 23, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "27", empresa: "linhasnorte", fornecedor: "10.159.093/0007-40", razaoSocial: "VIMEZER FORNC. DE SERV. LTDA", numNota: "2614", cfop: "6403", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "14260210159093000740550010000026141073344889", valor: 1783.00, qtdeDias: 18, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "28", empresa: "linhasnorte", fornecedor: "19.215.087/0002-23", razaoSocial: "MARTINS & SA LTDA ME", numNota: "2142", cfop: "6102", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "14260219215087000223550010000021421064331406", valor: 3928.00, qtdeDias: 18, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "29", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "960", cfop: "6103", dtEmissao: "18/02/2026", dtApresentacao: "-", chave: "14260201200900000145550010000009601300001972", valor: 12331.00, qtdeDias: 16, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "30", empresa: "linhasnorte", fornecedor: "01.867.060/0001-79", razaoSocial: "M. J. M. DA SILVA", numNota: "17514", cfop: "6101", dtEmissao: "18/02/2026", dtApresentacao: "-", chave: "14260201867060000179550010000175141004126555", valor: 400.00, qtdeDias: 16, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "31", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4139", cfop: "6102", dtEmissao: "24/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041391996657711", valor: 1960.00, qtdeDias: 10, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+];
+
+const USUARIOS_MOCK = [
+  { id: "u1", nome: "Admin DTE", email: "admin@enerwatt.com.br", perfil: "admin" },
+  { id: "u2", nome: "Operador 1", email: "fiscal@enerwatt.com.br", perfil: "operador" },
+];
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmtMoeda(v) {
+  return (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function getAlertas(nota) {
+  const dias = nota.qtdeDias;
+  const alertas = [];
+  if (["Desembaraçada", "Recusada"].includes(nota.status)) return alertas;
+  if (nota.valor > 25000) alertas.push({ tipo: "danger", msg: "Nota acima de R$ 25.000 — risco de multa de 10%" });
+  if (dias >= 60) alertas.push({ tipo: "danger", msg: `${dias} dias — PENDÊNCIA SEFAZ! Multa diária ativa` });
+  else if (dias >= 50) alertas.push({ tipo: "danger", msg: `${dias} dias — Atenção! Próximo de 60 dias (multa diária)` });
+  else if (dias >= 25 && dias < 30) alertas.push({ tipo: "warning", msg: `${dias} dias — Reanalisar antes de 30 dias para evitar taxa de R$ 50` });
+  if (nota.status === "Postergada" && nota.dtPostergacao) {
+    const dtPost = parseDateBR(nota.dtPostergacao);
+    if (dtPost) {
+      const limite = new Date(dtPost);
+      limite.setDate(limite.getDate() + 120);
+      const hoje = new Date("2026-03-06");
+      const restam = Math.floor((limite - hoje) / (1000 * 60 * 60 * 24));
+      if (restam <= 30) alertas.push({ tipo: "warning", msg: `Postergação vence em ${restam} dias` });
+    }
+  }
+  if (alertas.length === 0 && dias < 25) alertas.push({ tipo: "ok", msg: "Dentro do prazo" });
+  return alertas;
+}
+
+function getProximoPasso(nota) {
+  const dias = nota.qtdeDias;
+  if (nota.status === "Desembaraçada") return "✅ Concluída — Desembaraçada";
+  if (nota.status === "Recusada") return "❌ Concluída — Recusada no portal";
+  if (nota.status === "Identificada") return "🔍 1º Passo: Realizar Reanálise — identificar CC, Finalidade e Responsável";
+  if (nota.status === "Em Reanálise") {
+    if (nota.noRM === false) return "📞 Acionar comprador/responsável — nota não está no RM";
+    if (nota.noRM === null) return "🔍 Verificar se nota está lançada no RM";
+    if (nota.valor > 25000) return "📧 Nota >R$25k — Solicitar desembaraço via EMAIL à SEFAZ com justificativa";
+    return "📋 Solicitar Desembaraço — nota confirmada no RM";
+  }
+  if (nota.status === "Aguardando Pagamento") return "💰 Aguardando Financeiro efetuar pagamento de taxa/ICMS";
+  if (nota.status === "Aguarda Email SEFAZ") return "📧 Aguardando retorno da SEFAZ ao email enviado";
+  if (nota.status === "Desembaraço Solicitado") return "⏳ Solicitação em análise pela SEFAZ/AM";
+  if (nota.status === "Postergada") return "🗓️ Nota postergada — monitorar prazo de 180 dias";
+  return "—";
+}
+
+// ============================================================
+// COMPONENTES
+// ============================================================
+
+const LOGO_URL = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAA=";
+
+function Badge({ status }) {
+  const map = {
+    "Identificada": "bg-gray-100 text-gray-700",
+    "Em Reanálise": "bg-blue-100 text-blue-700",
+    "Aguardando Pagamento": "bg-yellow-100 text-yellow-800",
+    "Aguarda Email SEFAZ": "bg-purple-100 text-purple-700",
+    "Desembaraço Solicitado": "bg-orange-100 text-orange-700",
+    "Desembaraçada": "bg-green-100 text-green-700",
+    "Recusada": "bg-red-100 text-red-700",
+    "Postergada": "bg-indigo-100 text-indigo-700",
+  };
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${map[status] || "bg-gray-100 text-gray-600"}`}>
+      {status}
+    </span>
+  );
+}
+
+function AlertBadge({ dias, valor }) {
+  if (dias >= 60) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white">🔴 {dias}d CRÍTICO</span>;
+  if (dias >= 50) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">🔴 {dias}d</span>;
+  if (dias >= 25) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">🟡 {dias}d</span>;
+  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">🟢 {dias}d</span>;
+}
+
+// ============================================================
+// MODAL DETALHE DA NOTA
+// ============================================================
+function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
+  const [form, setForm] = useState({ ...nota });
+  const [activeTab, setActiveTab] = useState("dados");
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const salvar = () => {
+    const agora = new Date().toLocaleString("pt-BR");
+    const acoes = [];
+    if (form.status !== nota.status) acoes.push(`Status alterado: "${nota.status}" → "${form.status}"`);
+    if (form.centroCusto !== nota.centroCusto) acoes.push(`Centro de Custo: "${form.centroCusto}"`);
+    if (form.finalidade !== nota.finalidade) acoes.push(`Finalidade: "${form.finalidade}"`);
+    if (form.responsavel !== nota.responsavel) acoes.push(`Responsável: "${form.responsavel}"`);
+    if (form.noRM !== nota.noRM) acoes.push(`No RM: ${form.noRM ? "Sim" : "Não"}`);
+
+    const novoHistorico = [...(nota.historico || [])];
+    acoes.forEach(a => novoHistorico.push({ acao: a, usuario: usuarioAtual.nome, data: agora }));
+    if (acoes.length === 0) novoHistorico.push({ acao: "Nota revisada sem alterações", usuario: usuarioAtual.nome, data: agora });
+
+    onSave({ ...form, historico: novoHistorico });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-screen overflow-y-auto m-4">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "#f0f0f0" }}>
+          <div>
+            <h2 className="font-bold text-lg text-gray-800">{nota.razaoSocial}</h2>
+            <p className="text-sm text-gray-500">NF-e nº {nota.numNota} — CFOP {nota.cfop} — {EMPRESAS.find(e => e.id === nota.empresa)?.nome}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl font-light">×</button>
+        </div>
+
+        {/* Próximo Passo */}
+        <div className="mx-5 mt-4 p-3 rounded-xl text-sm font-medium" style={{ background: "#fff7f0", border: "1px solid #ffd6b8", color: "#b84a00" }}>
+          {getProximoPasso(form)}
+        </div>
+
+        {/* Alertas */}
+        {getAlertas(form).filter(a => a.tipo !== "ok").map((al, i) => (
+          <div key={i} className="mx-5 mt-2 p-3 rounded-xl text-sm font-medium" style={{ background: al.tipo === "danger" ? "#fff0f0" : "#fffbeb", border: `1px solid ${al.tipo === "danger" ? "#ffc7c7" : "#fde68a"}`, color: al.tipo === "danger" ? "#c0392b" : "#92400e" }}>
+            {al.msg}
+          </div>
+        ))}
+
+        {/* Tabs */}
+        <div className="flex gap-1 px-5 mt-4 border-b" style={{ borderColor: "#f0f0f0" }}>
+          {["dados", "financeiro", "historico"].map(t => (
+            <button key={t} onClick={() => setActiveTab(t)}
+              className={`px-4 py-2 text-sm font-semibold capitalize rounded-t-lg transition-all ${activeTab === t ? "text-white" : "text-gray-500 hover:text-gray-700"}`}
+              style={activeTab === t ? { background: "#E8450A" } : {}}>
+              {t === "dados" ? "Dados" : t === "financeiro" ? "Financeiro" : "Histórico"}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-5">
+          {activeTab === "dados" && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">CNPJ Fornecedor</label>
+                <p className="text-sm text-gray-800 mt-1">{form.fornecedor}</p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Chave NF-e</label>
+                <p className="text-xs text-gray-600 mt-1 break-all">{form.chave}</p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Dt. Emissão</label>
+                <p className="text-sm text-gray-800 mt-1">{form.dtEmissao}</p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Valor</label>
+                <p className="text-sm font-bold mt-1" style={{ color: form.valor > 25000 ? "#c0392b" : "#2d6a4f" }}>{fmtMoeda(form.valor)}</p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Status</label>
+                <select value={form.status} onChange={e => set("status", e.target.value)}
+                  className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }}>
+                  {STATUS_LIST.map(s => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Nota no RM?</label>
+                <select value={form.noRM === null ? "" : form.noRM ? "sim" : "nao"} onChange={e => set("noRM", e.target.value === "" ? null : e.target.value === "sim")}
+                  className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }}>
+                  <option value="">Não verificado</option>
+                  <option value="sim">✅ Sim</option>
+                  <option value="nao">❌ Não</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Centro de Custo</label>
+                <input value={form.centroCusto} onChange={e => set("centroCusto", e.target.value)}
+                  placeholder="Ex: Obra MLA - Contrato 001"
+                  className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Finalidade</label>
+                <select value={form.finalidade} onChange={e => set("finalidade", e.target.value)}
+                  className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }}>
+                  <option value="">Selecione...</option>
+                  {FINALIDADES.map(f => <option key={f}>{f}</option>)}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="text-xs font-semibold text-gray-500 uppercase">Responsável / Comprador</label>
+                <input value={form.responsavel} onChange={e => set("responsavel", e.target.value)}
+                  placeholder="Nome do responsável"
+                  className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Dt. Reanálise</label>
+                <input type="text" value={form.dtReanalise} onChange={e => set("dtReanalise", e.target.value)}
+                  placeholder="DD/MM/AAAA"
+                  className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Dt. Postergação</label>
+                <input type="text" value={form.dtPostergacao} onChange={e => set("dtPostergacao", e.target.value)}
+                  placeholder="DD/MM/AAAA"
+                  className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+              </div>
+              <div className="col-span-2">
+                <label className="text-xs font-semibold text-gray-500 uppercase">Observações</label>
+                <textarea value={form.obs} onChange={e => set("obs", e.target.value)} rows={3}
+                  className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+              </div>
+            </div>
+          )}
+
+          {activeTab === "financeiro" && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 p-3 rounded-xl text-sm" style={{ background: "#f8f9fa" }}>
+                <p className="text-xs text-gray-500 mb-1">Taxa de desembaraço é fixa. Os demais valores são informados pelo DTE e registrados manualmente.</p>
+              </div>
+              {[
+                { k: "taxaReanalise", label: "Taxa de Reanálise (R$)" },
+                { k: "taxaDesembaraco", label: "Taxa de Desembaraço (R$ 50,00 fixo)" },
+                { k: "icmsAntecipado", label: "ICMS Antecipado (R$)" },
+                { k: "multa", label: "Multa (R$)" },
+                { k: "juros", label: "Juros (R$)" },
+              ].map(({ k, label }) => (
+                <div key={k}>
+                  <label className="text-xs font-semibold text-gray-500 uppercase">{label}</label>
+                  <input type="number" step="0.01" value={form[k] || ""} onChange={e => set(k, parseFloat(e.target.value) || 0)}
+                    placeholder="0,00"
+                    className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+                </div>
+              ))}
+              <div className="col-span-2 p-4 rounded-xl" style={{ background: "#fff7f0", border: "1px solid #ffd6b8" }}>
+                <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Total de Custos</p>
+                <p className="text-2xl font-bold" style={{ color: "#E8450A" }}>
+                  {fmtMoeda((form.taxaReanalise || 0) + (form.taxaDesembaraco || 0) + (form.icmsAntecipado || 0) + (form.multa || 0) + (form.juros || 0))}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "historico" && (
+            <div className="space-y-2">
+              {(form.historico || []).slice().reverse().map((h, i) => (
+                <div key={i} className="flex gap-3 p-3 rounded-lg" style={{ background: "#f8f9fa" }}>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: "#E8450A" }}>
+                    {h.usuario?.charAt(0) || "S"}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-800">{h.acao}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{h.usuario} — {h.data}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-3 p-5 border-t" style={{ borderColor: "#f0f0f0" }}>
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border text-sm text-gray-600 hover:bg-gray-50" style={{ borderColor: "#e5e7eb" }}>Cancelar</button>
+          <button onClick={salvar} className="px-6 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}>Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// DRAWER DE ALERTAS
+// ============================================================
+function DrawerAlertas({ notas, filtro, onClose, onVerNota }) {
+  const ativas = notas.filter(n => !["Desembaraçada", "Recusada"].includes(n.status));
+  let lista = [];
+  let titulo = "";
+
+  if (filtro === "critico") {
+    lista = ativas.filter(n => n.qtdeDias >= 60).sort((a, b) => b.qtdeDias - a.qtdeDias);
+    titulo = "🔴 Notas Críticas — 60+ dias";
+  } else if (filtro === "atencao") {
+    lista = ativas.filter(n => n.qtdeDias >= 25 && n.qtdeDias < 60).sort((a, b) => b.qtdeDias - a.qtdeDias);
+    titulo = "🟡 Atenção — 25 a 59 dias";
+  } else if (filtro === "acima25k") {
+    lista = ativas.filter(n => n.valor > 25000).sort((a, b) => b.valor - a.valor);
+    titulo = "⚠️ Notas acima de R$ 25.000";
+  } else if (filtro === "pagamento") {
+    lista = ativas.filter(n => n.status === "Aguardando Pagamento");
+    titulo = "💰 Aguardando Pagamento";
+  } else if (filtro?.startsWith("empresa_")) {
+    const empId = filtro.replace("empresa_", "");
+    lista = ativas.filter(n => n.empresa === empId).sort((a, b) => b.qtdeDias - a.qtdeDias);
+    titulo = `🏢 ${EMPRESAS.find(e => e.id === empId)?.nome}`;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end" style={{ background: "rgba(0,0,0,0.4)" }} onClick={onClose}>
+      <div className="bg-white h-full w-full max-w-md flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "#f0f0f0" }}>
+          <div>
+            <h2 className="font-bold text-gray-800">{titulo}</h2>
+            <p className="text-xs text-gray-400 mt-0.5">{lista.length} nota(s)</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl font-light leading-none">×</button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {lista.length === 0 && (
+            <div className="text-center py-12 text-gray-400">
+              <p className="text-3xl mb-2">✅</p>
+              <p className="text-sm">Nenhuma nota nesta categoria</p>
+            </div>
+          )}
+          {lista.map(n => (
+            <div key={n.id} className="p-4 rounded-xl border cursor-pointer hover:shadow-md transition-all"
+              style={{ borderColor: n.qtdeDias >= 60 ? "#ffc7c7" : n.qtdeDias >= 25 ? "#fde68a" : "#e5e7eb", background: n.qtdeDias >= 60 ? "#fff8f8" : n.qtdeDias >= 25 ? "#fffdf0" : "#fff" }}
+              onClick={() => { onVerNota(n); onClose(); }}>
+              <div className="flex items-center justify-between mb-2">
+                <AlertBadge dias={n.qtdeDias} />
+                <span className="font-bold text-sm" style={{ color: n.valor > 25000 ? "#c0392b" : "#374151" }}>{fmtMoeda(n.valor)}</span>
+              </div>
+              <p className="font-semibold text-sm text-gray-800 truncate">{n.razaoSocial}</p>
+              <p className="text-xs text-gray-400 mt-0.5">NF {n.numNota} • {EMPRESAS.find(e => e.id === n.empresa)?.nome}</p>
+              <p className="text-xs mt-2 font-medium" style={{ color: "#E8450A" }}>{getProximoPasso(n)}</p>
+              <div className="mt-2"><Badge status={n.status} /></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// TELA: DASHBOARD
+// ============================================================
+function Dashboard({ notas, onVerNota, onIrParaPainel }) {
+  const [drawerFiltro, setDrawerFiltro] = useState(null);
+
+  const ativas = notas.filter(n => !["Desembaraçada", "Recusada"].includes(n.status));
+  const criticas = ativas.filter(n => n.qtdeDias >= 60);
+  const atencao = ativas.filter(n => n.qtdeDias >= 25 && n.qtdeDias < 60);
+  const acima25k = ativas.filter(n => n.valor > 25000);
+  const aguardPag = ativas.filter(n => n.status === "Aguardando Pagamento");
+  const desembaracadas = notas.filter(n => n.status === "Desembaraçada");
+  const totalCustos = notas.reduce((s, n) => s + (n.taxaReanalise || 0) + (n.taxaDesembaraco || 0) + (n.icmsAntecipado || 0) + (n.multa || 0) + (n.juros || 0), 0);
+
+  const porEmpresa = EMPRESAS.map(e => ({
+    ...e,
+    total: ativas.filter(n => n.empresa === e.id).length,
+    valor: ativas.filter(n => n.empresa === e.id).reduce((s, n) => s + n.valor, 0),
+    criticas: ativas.filter(n => n.empresa === e.id && n.qtdeDias >= 60).length,
+    atencao: ativas.filter(n => n.empresa === e.id && n.qtdeDias >= 25 && n.qtdeDias < 60).length,
+  }));
+
+  const cards = [
+    { label: "Notas Críticas", valor: criticas.length, sub: "60+ dias • clique para ver", cor: "#c0392b", bg: "#fff0f0", icon: "🔴", filtro: "critico", clicavel: true },
+    { label: "Atenção", valor: atencao.length, sub: "25–59 dias • clique para ver", cor: "#b7791f", bg: "#fffbeb", icon: "🟡", filtro: "atencao", clicavel: true },
+    { label: "Acima de R$ 25k", valor: acima25k.length, sub: "Risco multa 10% • clique para ver", cor: "#7e3af2", bg: "#f5f3ff", icon: "⚠️", filtro: "acima25k", clicavel: true },
+    { label: "Aguard. Pagamento", valor: aguardPag.length, sub: "Financeiro pendente • clique para ver", cor: "#1a56db", bg: "#eff6ff", icon: "💰", filtro: "pagamento", clicavel: true },
+    { label: "Desembaraçadas", valor: desembaracadas.length, sub: "Concluídas no período", cor: "#2d6a4f", bg: "#f0fdf4", icon: "✅", filtro: null, clicavel: false },
+    { label: "Custos Registrados", valor: fmtMoeda(totalCustos), sub: "Taxas + ICMS + Multas", cor: "#E8450A", bg: "#fff7f0", icon: "📊", filtro: null, clicavel: false },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Cards resumo — todos clicáveis onde aplicável */}
+      <div className="grid grid-cols-2 gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
+        {cards.map((c, i) => (
+          <div key={i}
+            onClick={() => c.clicavel && setDrawerFiltro(c.filtro)}
+            className={`rounded-2xl p-4 transition-all ${c.clicavel ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5" : ""}`}
+            style={{ background: c.bg, border: `1px solid ${c.cor}33` }}>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl">{c.icon}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-black" style={{ color: c.cor }}>{c.valor}</span>
+                {c.clicavel && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: c.cor + "22", color: c.cor }}>ver →</span>}
+              </div>
+            </div>
+            <p className="font-semibold text-gray-700 mt-2 text-sm">{c.label}</p>
+            <p className="text-xs text-gray-400">{c.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Por empresa — cada linha clicável */}
+      <div className="rounded-2xl border p-5" style={{ borderColor: "#f0f0f0" }}>
+        <h3 className="font-bold text-gray-700 mb-1 text-sm uppercase tracking-wide">Notas Ativas por Empresa</h3>
+        <p className="text-xs text-gray-400 mb-4">Clique em uma empresa para ver as notas filtradas</p>
+        <div className="space-y-3">
+          {porEmpresa.map(e => (
+            <div key={e.id}
+              onClick={() => setDrawerFiltro(`empresa_${e.id}`)}
+              className="flex items-center justify-between p-4 rounded-xl cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all"
+              style={{ background: "#f8f9fa", border: "1px solid #eee" }}>
+              <div className="flex-1">
+                <p className="font-semibold text-sm text-gray-800">{e.nome}</p>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="text-xs text-gray-400">{e.total} nota(s) ativa(s)</span>
+                  {e.criticas > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600">{e.criticas} crítica(s)</span>}
+                  {e.atencao > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">{e.atencao} atenção</span>}
+                </div>
+              </div>
+              <div className="text-right ml-3">
+                <p className="font-bold text-sm" style={{ color: "#E8450A" }}>{fmtMoeda(e.valor)}</p>
+                <p className="text-xs text-gray-400">em exposição</p>
+                <p className="text-xs font-semibold mt-1" style={{ color: "#E8450A" }}>ver notas →</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Botão flutuante de alertas */}
+      {(criticas.length > 0 || atencao.length > 0) && (
+        <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-2 items-end">
+          {criticas.length > 0 && (
+            <button onClick={() => setDrawerFiltro("critico")}
+              className="flex items-center gap-2 px-4 py-3 rounded-full text-white text-sm font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
+              style={{ background: "#c0392b" }}>
+              🔴 {criticas.length} nota(s) crítica(s)
+            </button>
+          )}
+          {atencao.length > 0 && (
+            <button onClick={() => setDrawerFiltro("atencao")}
+              className="flex items-center gap-2 px-4 py-3 rounded-full text-sm font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
+              style={{ background: "#b7791f", color: "white" }}>
+              🟡 {atencao.length} nota(s) em atenção
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Drawer lateral */}
+      {drawerFiltro && (
+        <DrawerAlertas
+          notas={notas}
+          filtro={drawerFiltro}
+          onClose={() => setDrawerFiltro(null)}
+          onVerNota={onVerNota}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// TELA: PAINEL DE NOTAS
+// ============================================================
+function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
+  const [filtros, setFiltros] = useState({
+    empresa: "", status: "", busca: "", dias: "",
+    tipoData: "emissao", dtDe: "", dtAte: ""
+  });
+  const [mostrarImport, setMostrarImport] = useState(false);
+  const setF = (k, v) => setFiltros(f => ({ ...f, [k]: v }));
+
+  function parseDateBR2(str) {
+    if (!str || str.length !== 10) return null;
+    const [d, m, y] = str.split("/");
+    if (!d || !m || !y) return null;
+    return new Date(`${y}-${m}-${d}`);
+  }
+
+  const filtradas = notas.filter(n => {
+    if (filtros.empresa && n.empresa !== filtros.empresa) return false;
+    if (filtros.status && n.status !== filtros.status) return false;
+    if (filtros.dias === "critico" && n.qtdeDias < 60) return false;
+    if (filtros.dias === "atencao" && (n.qtdeDias < 25 || n.qtdeDias >= 60)) return false;
+    if (filtros.dias === "ok" && n.qtdeDias >= 25) return false;
+    if (filtros.busca) {
+      const b = filtros.busca.toLowerCase();
+      if (!n.razaoSocial.toLowerCase().includes(b) && !n.numNota.includes(b) && !n.fornecedor.includes(b) && !n.chave.includes(b)) return false;
+    }
+    // Filtro de data
+    if (filtros.dtDe || filtros.dtAte) {
+      const campoData = filtros.tipoData === "emissao" ? n.dtEmissao : n.dtImportacao;
+      const dataRef = parseDateBR2(campoData);
+      const de = parseDateBR2(filtros.dtDe);
+      const ate = parseDateBR2(filtros.dtAte);
+      if (!dataRef) return false;
+      if (de && dataRef < de) return false;
+      if (ate && dataRef > ate) return false;
+    }
+    return true;
+  });
+
+  const handleFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => onImportar(ev.target.result, file.name);
+    reader.readAsText(file, "ascii");
+    e.target.value = "";
+    setMostrarImport(false);
+  };
+
+  const limparFiltros = () => setFiltros({ empresa: "", status: "", busca: "", dias: "", tipoData: "emissao", dtDe: "", dtAte: "" });
+  const temFiltroAtivo = filtros.empresa || filtros.status || filtros.busca || filtros.dias || filtros.dtDe || filtros.dtAte;
+
+  return (
+    <div className="space-y-4">
+
+      {/* Banner de importação destacado */}
+      <div className="rounded-2xl p-4 flex items-center justify-between" style={{ background: "#fff7f0", border: "2px dashed #E8450A" }}>
+        <div>
+          <p className="font-bold text-sm" style={{ color: "#E8450A" }}>📥 Importar arquivo do DTE</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Faça upload do CSV/Excel exportado do DTE semanalmente.
+            {ultimaImportacao && <span className="ml-2 font-medium text-gray-600">Última importação: {ultimaImportacao}</span>}
+          </p>
+        </div>
+        <label className="px-5 py-2.5 rounded-xl text-sm font-bold text-white cursor-pointer whitespace-nowrap ml-4 hover:opacity-90 transition-opacity" style={{ background: "#E8450A" }}>
+          ⬆ Selecionar Arquivo
+          <input type="file" accept=".csv,.xlsx" className="hidden" onChange={handleFile} />
+        </label>
+      </div>
+
+      {/* Filtros */}
+      <div className="rounded-2xl border p-4 space-y-3" style={{ borderColor: "#f0f0f0", background: "#fafafa" }}>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Filtros</p>
+          {temFiltroAtivo && (
+            <button onClick={limparFiltros} className="text-xs font-semibold" style={{ color: "#E8450A" }}>✕ Limpar filtros</button>
+          )}
+        </div>
+
+        {/* Linha 1: busca + empresa + status + prazo */}
+        <div className="flex flex-wrap gap-2">
+          <input placeholder="🔍 Buscar fornecedor, NF ou chave..." value={filtros.busca} onChange={e => setF("busca", e.target.value)}
+            className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb", minWidth: 240 }} />
+          <select value={filtros.empresa} onChange={e => setF("empresa", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+            <option value="">Todas as empresas</option>
+            {EMPRESAS.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
+          </select>
+          <select value={filtros.status} onChange={e => setF("status", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+            <option value="">Todos os status</option>
+            {STATUS_LIST.map(s => <option key={s}>{s}</option>)}
+          </select>
+          <select value={filtros.dias} onChange={e => setF("dias", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+            <option value="">Todos os prazos</option>
+            <option value="critico">🔴 Crítico (60+ dias)</option>
+            <option value="atencao">🟡 Atenção (25-59 dias)</option>
+            <option value="ok">🟢 OK (0-24 dias)</option>
+          </select>
+        </div>
+
+        {/* Linha 2: filtro de data */}
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs font-semibold text-gray-500">Filtrar por data:</p>
+          <select value={filtros.tipoData} onChange={e => setF("tipoData", e.target.value)}
+            className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+            <option value="emissao">Data de Emissão</option>
+            <option value="importacao">Data de Importação</option>
+          </select>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400">De</span>
+            <input
+              type="text"
+              placeholder="DD/MM/AAAA"
+              value={filtros.dtDe}
+              maxLength={10}
+              onChange={e => {
+                let v = e.target.value.replace(/\D/g, "");
+                if (v.length >= 3) v = v.slice(0,2) + "/" + v.slice(2);
+                if (v.length >= 6) v = v.slice(0,5) + "/" + v.slice(5);
+                setF("dtDe", v.slice(0,10));
+              }}
+              className="border rounded-lg px-3 py-2 text-sm bg-white w-32" style={{ borderColor: filtros.dtDe.length === 10 ? "#E8450A" : "#e5e7eb" }}
+            />
+            <span className="text-xs text-gray-400">Até</span>
+            <input
+              type="text"
+              placeholder="DD/MM/AAAA"
+              value={filtros.dtAte}
+              maxLength={10}
+              onChange={e => {
+                let v = e.target.value.replace(/\D/g, "");
+                if (v.length >= 3) v = v.slice(0,2) + "/" + v.slice(2);
+                if (v.length >= 6) v = v.slice(0,5) + "/" + v.slice(5);
+                setF("dtAte", v.slice(0,10));
+              }}
+              className="border rounded-lg px-3 py-2 text-sm bg-white w-32" style={{ borderColor: filtros.dtAte.length === 10 ? "#E8450A" : "#e5e7eb" }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <p className="text-xs text-gray-400 px-1">
+        {filtradas.length} nota(s) encontrada(s)
+        {temFiltroAtivo && <span className="ml-2 font-semibold" style={{ color: "#E8450A" }}>• filtros ativos</span>}
+      </p>
+
+      {/* Tabela */}
+      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "#f0f0f0" }}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ background: "#f8f9fa" }}>
+                {["Empresa", "Fornecedor", "NF", "CFOP", "Dt. Emissão", "Valor", "Dias", "Status", "Centro Custo", "Próximo Passo", ""].map(h => (
+                  <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtradas.map((n, i) => (
+                <tr key={n.id} className="border-t hover:bg-orange-50 transition-colors" style={{ borderColor: "#f0f0f0" }}>
+                  <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">{EMPRESAS.find(e => e.id === n.empresa)?.nome?.split(" - ")[1] || n.empresa}</td>
+                  <td className="px-3 py-3 max-w-xs">
+                    <p className="font-medium text-gray-800 text-xs truncate" title={n.razaoSocial}>{n.razaoSocial}</p>
+                    <p className="text-xs text-gray-400">{n.fornecedor}</p>
+                  </td>
+                  <td className="px-3 py-3 text-xs font-mono text-gray-600 whitespace-nowrap">{n.numNota}</td>
+                  <td className="px-3 py-3 text-xs text-gray-600">{n.cfop}</td>
+                  <td className="px-3 py-3 text-xs text-gray-600 whitespace-nowrap">{n.dtEmissao}</td>
+                  <td className="px-3 py-3 text-xs font-bold whitespace-nowrap" style={{ color: n.valor > 25000 ? "#c0392b" : "#374151" }}>{fmtMoeda(n.valor)}</td>
+                  <td className="px-3 py-3"><AlertBadge dias={n.qtdeDias} /></td>
+                  <td className="px-3 py-3"><Badge status={n.status} /></td>
+                  <td className="px-3 py-3 text-xs text-gray-500">{n.centroCusto || <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-3 text-xs text-gray-500 max-w-xs">
+                    <span className="truncate block" title={getProximoPasso(n)}>{getProximoPasso(n)}</span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <button onClick={() => onVerNota(n)} className="px-3 py-1 rounded-lg text-xs font-semibold text-white whitespace-nowrap" style={{ background: "#E8450A" }}>
+                      Abrir
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filtradas.length === 0 && (
+            <div className="text-center py-12 text-gray-400">
+              <p className="text-4xl mb-2">📋</p>
+              <p>Nenhuma nota encontrada com os filtros selecionados</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// SVG TORRES DE TRANSMISSÃO (background decorativo)
+// ============================================================
+function TorresSVG() {
+  return (
+    <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "100%", opacity: 0.07 }} preserveAspectRatio="xMidYMax meet">
+      {/* Torre 1 */}
+      <g transform="translate(60,20)">
+        <line x1="40" y1="0" x2="20" y2="280" stroke="#E8450A" strokeWidth="3"/>
+        <line x1="40" y1="0" x2="60" y2="280" stroke="#E8450A" strokeWidth="3"/>
+        <line x1="20" y1="280" x2="60" y2="280" stroke="#E8450A" strokeWidth="3"/>
+        <line x1="10" y1="80" x2="70" y2="80" stroke="#E8450A" strokeWidth="2"/>
+        <line x1="15" y1="140" x2="65" y2="140" stroke="#E8450A" strokeWidth="2"/>
+        <line x1="18" y1="200" x2="62" y2="200" stroke="#E8450A" strokeWidth="2"/>
+        <line x1="5" y1="80" x2="20" y2="280" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="75" y1="80" x2="60" y2="280" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="10" y1="80" x2="25" y2="140" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="70" y1="80" x2="55" y2="140" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="15" y1="140" x2="28" y2="200" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="65" y1="140" x2="52" y2="200" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="0" y1="60" x2="80" y2="60" stroke="#E8450A" strokeWidth="2.5"/>
+        <line x1="-5" y1="30" x2="85" y2="30" stroke="#E8450A" strokeWidth="2.5"/>
+      </g>
+      {/* Torre 2 */}
+      <g transform="translate(280,60)">
+        <line x1="40" y1="0" x2="20" y2="240" stroke="#E8450A" strokeWidth="3"/>
+        <line x1="40" y1="0" x2="60" y2="240" stroke="#E8450A" strokeWidth="3"/>
+        <line x1="20" y1="240" x2="60" y2="240" stroke="#E8450A" strokeWidth="3"/>
+        <line x1="10" y1="70" x2="70" y2="70" stroke="#E8450A" strokeWidth="2"/>
+        <line x1="15" y1="130" x2="65" y2="130" stroke="#E8450A" strokeWidth="2"/>
+        <line x1="18" y1="185" x2="62" y2="185" stroke="#E8450A" strokeWidth="2"/>
+        <line x1="5" y1="70" x2="20" y2="240" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="75" y1="70" x2="60" y2="240" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="0" y1="50" x2="80" y2="50" stroke="#E8450A" strokeWidth="2.5"/>
+        <line x1="-5" y1="25" x2="85" y2="25" stroke="#E8450A" strokeWidth="2.5"/>
+      </g>
+      {/* Torre 3 — maior, central */}
+      <g transform="translate(500,0)">
+        <line x1="50" y1="0" x2="22" y2="300" stroke="#E8450A" strokeWidth="3.5"/>
+        <line x1="50" y1="0" x2="78" y2="300" stroke="#E8450A" strokeWidth="3.5"/>
+        <line x1="22" y1="300" x2="78" y2="300" stroke="#E8450A" strokeWidth="3"/>
+        <line x1="8" y1="90" x2="92" y2="90" stroke="#E8450A" strokeWidth="2.5"/>
+        <line x1="12" y1="155" x2="88" y2="155" stroke="#E8450A" strokeWidth="2"/>
+        <line x1="16" y1="215" x2="84" y2="215" stroke="#E8450A" strokeWidth="2"/>
+        <line x1="2" y1="90" x2="22" y2="300" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="98" y1="90" x2="78" y2="300" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="8" y1="90" x2="28" y2="155" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="92" y1="90" x2="72" y2="155" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="0" y1="65" x2="100" y2="65" stroke="#E8450A" strokeWidth="3"/>
+        <line x1="-8" y1="35" x2="108" y2="35" stroke="#E8450A" strokeWidth="3"/>
+      </g>
+      {/* Torre 4 */}
+      <g transform="translate(730,40)">
+        <line x1="40" y1="0" x2="20" y2="260" stroke="#E8450A" strokeWidth="3"/>
+        <line x1="40" y1="0" x2="60" y2="260" stroke="#E8450A" strokeWidth="3"/>
+        <line x1="20" y1="260" x2="60" y2="260" stroke="#E8450A" strokeWidth="3"/>
+        <line x1="10" y1="75" x2="70" y2="75" stroke="#E8450A" strokeWidth="2"/>
+        <line x1="14" y1="140" x2="66" y2="140" stroke="#E8450A" strokeWidth="2"/>
+        <line x1="17" y1="200" x2="63" y2="200" stroke="#E8450A" strokeWidth="2"/>
+        <line x1="4" y1="75" x2="20" y2="260" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="76" y1="75" x2="60" y2="260" stroke="#E8450A" strokeWidth="1.5"/>
+        <line x1="0" y1="55" x2="80" y2="55" stroke="#E8450A" strokeWidth="2.5"/>
+        <line x1="-4" y1="28" x2="84" y2="28" stroke="#E8450A" strokeWidth="2.5"/>
+      </g>
+      {/* Cabos entre torres */}
+      <path d="M 140 30 Q 240 80 325 25" stroke="#E8450A" strokeWidth="1.5" fill="none"/>
+      <path d="M 140 60 Q 240 110 325 55" stroke="#E8450A" strokeWidth="1.5" fill="none"/>
+      <path d="M 365 25 Q 430 60 505 35" stroke="#E8450A" strokeWidth="1.5" fill="none"/>
+      <path d="M 365 55 Q 430 90 505 65" stroke="#E8450A" strokeWidth="1.5" fill="none"/>
+      <path d="M 608 35 Q 670 70 735 55" stroke="#E8450A" strokeWidth="1.5" fill="none"/>
+      <path d="M 608 65 Q 670 100 735 83" stroke="#E8450A" strokeWidth="1.5" fill="none"/>
+    </svg>
+  );
+}
+
+// ============================================================
+// TELA: RELATÓRIOS
+// ============================================================
+function Relatorios({ notas }) {
+  const [periodo, setPeriodo] = useState("mensal");
+  const [empresa, setEmpresa] = useState("");
+  const [status, setStatus] = useState("");
+  const [dias, setDias] = useState("");
+  const [tipoData, setTipoData] = useState("emissao");
+  const [dtDe, setDtDe] = useState("");
+  const [dtAte, setDtAte] = useState("");
+  const [finalidade, setFinalidade] = useState("");
+  const [busca, setBusca] = useState("");
+
+  function parseDateBR2(str) {
+    if (!str || str.length !== 10) return null;
+    const [d, m, y] = str.split("/");
+    if (!d || !m || !y) return null;
+    return new Date(`${y}-${m}-${d}`);
+  }
+
+  const filtradas = notas.filter(n => {
+    if (empresa && n.empresa !== empresa) return false;
+    if (status && n.status !== status) return false;
+    if (finalidade && n.finalidade !== finalidade) return false;
+    if (dias === "critico" && n.qtdeDias < 60) return false;
+    if (dias === "atencao" && (n.qtdeDias < 25 || n.qtdeDias >= 60)) return false;
+    if (dias === "ok" && n.qtdeDias >= 25) return false;
+    if (busca) {
+      const b = busca.toLowerCase();
+      if (!n.razaoSocial.toLowerCase().includes(b) && !n.numNota.includes(b) && !n.fornecedor.includes(b)) return false;
+    }
+    if (dtDe || dtAte) {
+      const campoData = tipoData === "emissao" ? n.dtEmissao : n.dtImportacao;
+      const dataRef = parseDateBR2(campoData);
+      const de = parseDateBR2(dtDe);
+      const ate = parseDateBR2(dtAte);
+      if (!dataRef) return false;
+      if (de && dataRef < de) return false;
+      if (ate && dataRef > ate) return false;
+    }
+    return true;
+  });
+
+  const totalTaxas = filtradas.reduce((s, n) => s + (n.taxaReanalise || 0) + (n.taxaDesembaraco || 0), 0);
+  const totalICMS = filtradas.reduce((s, n) => s + (n.icmsAntecipado || 0), 0);
+  const totalMultas = filtradas.reduce((s, n) => s + (n.multa || 0), 0);
+  const totalJuros = filtradas.reduce((s, n) => s + (n.juros || 0), 0);
+  const totalGeral = totalTaxas + totalICMS + totalMultas + totalJuros;
+
+  const porStatus = STATUS_LIST.map(s => ({ status: s, count: filtradas.filter(n => n.status === s).length })).filter(x => x.count > 0);
+  const porEmpresa = EMPRESAS.map(e => ({ ...e, count: filtradas.filter(n => n.empresa === e.id).length, custos: filtradas.filter(n => n.empresa === e.id).reduce((s, n) => s + (n.taxaReanalise || 0) + (n.taxaDesembaraco || 0) + (n.icmsAntecipado || 0) + (n.multa || 0) + (n.juros || 0), 0) }));
+  const porFinalidade = FINALIDADES.map(f => ({ f, count: filtradas.filter(n => n.finalidade === f).length })).filter(x => x.count > 0);
+
+  const temFiltro = empresa || status || dias || dtDe || dtAte || finalidade || busca;
+  const limpar = () => { setEmpresa(""); setStatus(""); setDias(""); setDtDe(""); setDtAte(""); setFinalidade(""); setBusca(""); setTipoData("emissao"); };
+
+  function fmtDateInput(setter) {
+    return (e) => {
+      let v = e.target.value.replace(/\D/g, "");
+      if (v.length >= 3) v = v.slice(0,2) + "/" + v.slice(2);
+      if (v.length >= 6) v = v.slice(0,5) + "/" + v.slice(5);
+      setter(v.slice(0,10));
+    };
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Filtros */}
+      <div className="rounded-2xl border p-4 space-y-3" style={{ borderColor: "#f0f0f0", background: "#fafafa" }}>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Filtros do Relatório</p>
+          <div className="flex items-center gap-3">
+            {temFiltro && <button onClick={limpar} className="text-xs font-semibold" style={{ color: "#E8450A" }}>✕ Limpar</button>}
+            <div className="flex gap-2">
+              <button className="px-4 py-2 rounded-lg text-sm font-semibold border" style={{ borderColor: "#E8450A", color: "#E8450A" }}
+                onClick={() => alert("Exportação Excel — disponível na versão com backend")}>📊 Excel</button>
+              <button className="px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}
+                onClick={() => alert("Exportação PDF — disponível na versão com backend")}>📄 PDF</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Linha 1 */}
+        <div className="flex flex-wrap gap-2">
+          <select value={periodo} onChange={e => setPeriodo(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+            <option value="semanal">Semanal</option>
+            <option value="mensal">Mensal</option>
+            <option value="trimestral">Trimestral</option>
+          </select>
+          <input placeholder="🔍 Buscar fornecedor ou NF..." value={busca} onChange={e => setBusca(e.target.value)}
+            className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb", minWidth: 200 }} />
+          <select value={empresa} onChange={e => setEmpresa(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+            <option value="">Todas as empresas</option>
+            {EMPRESAS.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
+          </select>
+          <select value={status} onChange={e => setStatus(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+            <option value="">Todos os status</option>
+            {STATUS_LIST.map(s => <option key={s}>{s}</option>)}
+          </select>
+          <select value={finalidade} onChange={e => setFinalidade(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+            <option value="">Todas as finalidades</option>
+            {FINALIDADES.map(f => <option key={f}>{f}</option>)}
+          </select>
+          <select value={dias} onChange={e => setDias(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+            <option value="">Todos os prazos</option>
+            <option value="critico">🔴 Crítico (60+)</option>
+            <option value="atencao">🟡 Atenção (25-59)</option>
+            <option value="ok">🟢 OK (0-24)</option>
+          </select>
+        </div>
+
+        {/* Linha 2: datas */}
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs font-semibold text-gray-500">Período:</p>
+          <select value={tipoData} onChange={e => setTipoData(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+            <option value="emissao">Data de Emissão</option>
+            <option value="importacao">Data de Importação</option>
+          </select>
+          <span className="text-xs text-gray-400">De</span>
+          <input type="text" placeholder="DD/MM/AAAA" value={dtDe} maxLength={10} onChange={fmtDateInput(setDtDe)}
+            className="border rounded-lg px-3 py-2 text-sm bg-white w-32" style={{ borderColor: dtDe.length===10 ? "#E8450A" : "#e5e7eb" }} />
+          <span className="text-xs text-gray-400">Até</span>
+          <input type="text" placeholder="DD/MM/AAAA" value={dtAte} maxLength={10} onChange={fmtDateInput(setDtAte)}
+            className="border rounded-lg px-3 py-2 text-sm bg-white w-32" style={{ borderColor: dtAte.length===10 ? "#E8450A" : "#e5e7eb" }} />
+          <span className="text-xs text-gray-400 ml-2">{filtradas.length} nota(s) no relatório{temFiltro && <span className="font-semibold" style={{ color: "#E8450A" }}> • filtros ativos</span>}</span>
+        </div>
+      </div>
+
+      {/* Relatório */}
+      <div className="rounded-2xl border p-6" style={{ borderColor: "#f0f0f0" }}>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-bold text-gray-700 uppercase tracking-wide text-sm">Relatório Gerencial — {periodo.charAt(0).toUpperCase() + periodo.slice(1)}</h3>
+        </div>
+        <p className="text-xs text-gray-400 mb-5">{empresa ? EMPRESAS.find(e => e.id === empresa)?.nome : "Todas as empresas"} {dtDe && `• De ${dtDe}`} {dtAte && `Até ${dtAte}`}</p>
+
+        <div className="grid grid-cols-2 gap-4 mb-6" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
+          {[
+            { label: "Total de Notas", valor: filtradas.length, cor: "#374151" },
+            { label: "Notas Ativas", valor: filtradas.filter(n => !["Desembaraçada", "Recusada"].includes(n.status)).length, cor: "#1a56db" },
+            { label: "Desembaraçadas", valor: filtradas.filter(n => n.status === "Desembaraçada").length, cor: "#2d6a4f" },
+            { label: "Recusadas", valor: filtradas.filter(n => n.status === "Recusada").length, cor: "#c0392b" },
+            { label: "Críticas (60+d)", valor: filtradas.filter(n => n.qtdeDias >= 60 && !["Desembaraçada","Recusada"].includes(n.status)).length, cor: "#c0392b" },
+            { label: "Acima R$25k", valor: filtradas.filter(n => n.valor > 25000).length, cor: "#7e3af2" },
+          ].map((c, i) => (
+            <div key={i} className="p-4 rounded-xl" style={{ background: "#f8f9fa" }}>
+              <p className="text-2xl font-black" style={{ color: c.cor }}>{c.valor}</p>
+              <p className="text-xs text-gray-500 mt-1">{c.label}</p>
+            </div>
+          ))}
+        </div>
+
+        <h4 className="font-semibold text-gray-600 mb-3 text-sm">Breakdown de Custos</h4>
+        <div className="space-y-2 mb-6">
+          {[
+            { label: "Taxas (Reanálise + Desembaraço)", valor: totalTaxas },
+            { label: "ICMS Antecipado", valor: totalICMS },
+            { label: "Multas", valor: totalMultas },
+            { label: "Juros", valor: totalJuros },
+          ].map((c, i) => (
+            <div key={i} className="flex justify-between items-center p-3 rounded-lg" style={{ background: "#f8f9fa" }}>
+              <span className="text-sm text-gray-600">{c.label}</span>
+              <span className="font-bold text-sm" style={{ color: c.valor > 0 ? "#c0392b" : "#9ca3af" }}>{fmtMoeda(c.valor)}</span>
+            </div>
+          ))}
+          <div className="flex justify-between items-center p-3 rounded-xl" style={{ background: "#fff7f0", border: "1px solid #ffd6b8" }}>
+            <span className="font-bold text-gray-700">TOTAL GERAL</span>
+            <span className="font-black text-xl" style={{ color: "#E8450A" }}>{fmtMoeda(totalGeral)}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))" }}>
+          <div>
+            <h4 className="font-semibold text-gray-600 mb-3 text-sm">Por Empresa</h4>
+            <div className="space-y-2">
+              {porEmpresa.map(e => (
+                <div key={e.id} className="flex justify-between items-center p-3 rounded-lg" style={{ background: "#f8f9fa" }}>
+                  <span className="text-sm text-gray-700">{e.nome}</span>
+                  <div className="text-right">
+                    <span className="font-semibold text-sm text-gray-700">{e.count} notas</span>
+                    <p className="text-xs" style={{ color: e.custos > 0 ? "#c0392b" : "#9ca3af" }}>{fmtMoeda(e.custos)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-600 mb-3 text-sm">Por Status</h4>
+            <div className="space-y-2">
+              {porStatus.map(s => (
+                <div key={s.status} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: "#f8f9fa" }}>
+                  <Badge status={s.status} />
+                  <span className="font-bold text-sm text-gray-700">{s.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {porFinalidade.length > 0 && (
+            <div>
+              <h4 className="font-semibold text-gray-600 mb-3 text-sm">Por Finalidade</h4>
+              <div className="space-y-2">
+                {porFinalidade.map(({ f, count }) => (
+                  <div key={f} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: "#f8f9fa" }}>
+                    <span className="text-sm text-gray-600">{f}</span>
+                    <span className="font-bold text-sm text-gray-700">{count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// MODAL EMPRESA
+// ============================================================
+function ModalEmpresa({ empresa, onClose, onSalvar }) {
+  const [form, setForm] = useState(empresa || { id: "", nome: "", inscricao: "", cnpj: "", ativa: true });
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const isNova = !empresa;
+
+  const salvar = () => {
+    if (!form.nome || !form.inscricao || !form.cnpj) { alert("Preencha Nome, IE e CNPJ."); return; }
+    const id = isNova ? "emp_" + Date.now() : form.id;
+    onSalvar({ ...form, id });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md m-4">
+        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "#f0f0f0" }}>
+          <h2 className="font-bold text-gray-800">{isNova ? "Nova Empresa" : "Editar Empresa"}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl font-light">×</button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase">Nome / Apelido da Filial</label>
+            <input value={form.nome} onChange={e => set("nome", e.target.value)} placeholder="Ex: FILIAL 02 - MANAUS"
+              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase">Inscrição Estadual (IE)</label>
+            <input value={form.inscricao} onChange={e => set("inscricao", e.target.value)} placeholder="Ex: 04.235.429-3"
+              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+            <p className="text-xs text-gray-400 mt-1">Usada para identificação automática no upload do CSV.</p>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase">CNPJ</label>
+            <input value={form.cnpj} onChange={e => set("cnpj", e.target.value)} placeholder="Ex: 07.791.042/0002-18"
+              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+            <p className="text-xs text-gray-400 mt-1">Também usado para identificação automática no upload.</p>
+          </div>
+          <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: "#f8f9fa" }}>
+            <span className="text-sm text-gray-700 flex-1">Empresa Ativa</span>
+            <button onClick={() => set("ativa", !form.ativa)}
+              className="w-12 h-6 rounded-full transition-all relative"
+              style={{ background: form.ativa ? "#E8450A" : "#d1d5db" }}>
+              <span className="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all"
+                style={{ left: form.ativa ? "26px" : "2px" }} />
+            </button>
+            <span className="text-xs font-semibold" style={{ color: form.ativa ? "#E8450A" : "#9ca3af" }}>
+              {form.ativa ? "Ativa" : "Inativa"}
+            </span>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 p-5 border-t" style={{ borderColor: "#f0f0f0" }}>
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border text-sm text-gray-600 hover:bg-gray-50" style={{ borderColor: "#e5e7eb" }}>Cancelar</button>
+          <button onClick={salvar} className="px-6 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}>
+            {isNova ? "Adicionar Empresa" : "Salvar Alterações"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// MODAL CONFIRMAÇÃO EMPRESA NO IMPORT
+// ============================================================
+function ModalConfirmImport({ notasParaImportar, empresas, onConfirmar, onCancelar, usuarioNome, fileName }) {
+  // agrupa por CNPJ detectado do arquivo
+  const grupos = [];
+  const cnpjsVistos = {};
+  notasParaImportar.forEach(n => {
+    const cnpj = n._cnpjDetectado || "desconhecido";
+    if (!cnpjsVistos[cnpj]) {
+      cnpjsVistos[cnpj] = { cnpj, notas: [], empresaId: n._empresaId || "" };
+      grupos.push(cnpjsVistos[cnpj]);
+    }
+    cnpjsVistos[cnpj].notas.push(n);
+  });
+
+  const [selecoes, setSelecoes] = useState(() => {
+    const s = {};
+    grupos.forEach(g => { s[g.cnpj] = g.empresaId; });
+    return s;
+  });
+
+  const confirmar = () => {
+    const notasFinais = notasParaImportar.map(n => ({
+      ...n,
+      empresa: selecoes[n._cnpjDetectado || "desconhecido"] || "filial02",
+      _cnpjDetectado: undefined,
+      _empresaId: undefined,
+      historico: [{ acao: `Importada via arquivo: ${fileName}`, usuario: usuarioNome, data: new Date().toLocaleString("pt-BR") }]
+    }));
+    onConfirmar(notasFinais);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)" }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg m-4 max-h-screen overflow-y-auto">
+        <div className="p-5 border-b" style={{ borderColor: "#f0f0f0" }}>
+          <h2 className="font-bold text-gray-800">Confirmar Importação</h2>
+          <p className="text-xs text-gray-400 mt-1">{notasParaImportar.length} nota(s) novas encontradas em <span className="font-semibold">{fileName}</span></p>
+        </div>
+        <div className="p-5 space-y-4">
+          <p className="text-sm text-gray-600">Verifique a empresa identificada para cada CNPJ do arquivo. Corrija se necessário antes de importar.</p>
+          {grupos.map(g => (
+            <div key={g.cnpj} className="p-4 rounded-xl border" style={{ borderColor: g.empresaId ? "#d1fae5" : "#fde68a", background: g.empresaId ? "#f0fdf4" : "#fffbeb" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: g.empresaId ? "#d1fae5" : "#fde68a", color: g.empresaId ? "#065f46" : "#92400e" }}>
+                  {g.empresaId ? "✅ Identificado" : "⚠️ Não identificado"}
+                </span>
+                <span className="text-xs text-gray-500 font-mono">{g.cnpj}</span>
+                <span className="text-xs text-gray-400">({g.notas.length} nota{g.notas.length > 1 ? "s" : ""})</span>
+              </div>
+              <label className="text-xs font-semibold text-gray-500 uppercase">Empresa</label>
+              <select value={selecoes[g.cnpj] || ""} onChange={e => setSelecoes(s => ({ ...s, [g.cnpj]: e.target.value }))}
+                className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}>
+                <option value="">Selecione a empresa...</option>
+                {empresas.filter(e => e.ativa).map(e => (
+                  <option key={e.id} value={e.id}>{e.nome} — IE: {e.inscricao}</option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-end gap-3 p-5 border-t" style={{ borderColor: "#f0f0f0" }}>
+          <button onClick={onCancelar} className="px-4 py-2 rounded-lg border text-sm text-gray-600 hover:bg-gray-50" style={{ borderColor: "#e5e7eb" }}>Cancelar</button>
+          <button onClick={confirmar}
+            disabled={grupos.some(g => !selecoes[g.cnpj])}
+            className="px-6 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+            style={{ background: "#E8450A" }}>
+            Importar {notasParaImportar.length} Nota(s)
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// TELA: CONFIGURAÇÕES
+// ============================================================
+function Configuracoes({ usuarios, onSalvarUsuario, logoUrl, onSalvarLogo, empresas, onSalvarEmpresa }) {
+  const [novoNome, setNovoNome] = useState("");
+  const [novoEmail, setNovoEmail] = useState("");
+  const [novoPerfil, setNovoPerfil] = useState("operador");
+  const [modalEmpresa, setModalEmpresa] = useState(null); // null = fechado, {} = nova, {id,...} = editar
+
+  const handleLogo = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => onSalvarLogo(ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="space-y-6">
+
+      {/* Logo */}
+      <div className="rounded-2xl border p-5" style={{ borderColor: "#f0f0f0" }}>
+        <h3 className="font-bold text-gray-700 mb-4 text-sm uppercase tracking-wide">Logo do Sistema</h3>
+        <p className="text-xs text-gray-400 mb-4">Aparece na sidebar e será incluída nos relatórios exportados.</p>
+        <div className="flex items-center gap-5">
+          <div className="w-40 h-20 rounded-xl border flex items-center justify-center overflow-hidden" style={{ borderColor: "#e5e7eb", background: "#1a1a1a" }}>
+            {logoUrl ? <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain p-2" />
+              : <span className="text-xs text-gray-500">Sem logo</span>}
+          </div>
+          <div>
+            <label className="px-4 py-2 rounded-lg text-sm font-semibold text-white cursor-pointer inline-block" style={{ background: "#E8450A" }}>
+              📷 Alterar Logo
+              <input type="file" accept="image/*" className="hidden" onChange={handleLogo} />
+            </label>
+            {logoUrl && <button onClick={() => onSalvarLogo(null)} className="ml-3 text-xs text-gray-400 hover:text-red-500">Remover</button>}
+            <p className="text-xs text-gray-400 mt-2">PNG, JPG ou SVG. Fundo transparente ou escuro recomendado.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Empresas */}
+      <div className="rounded-2xl border p-5" style={{ borderColor: "#f0f0f0" }}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wide">Empresas / Inscrições Estaduais</h3>
+          <button onClick={() => setModalEmpresa({})}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}>
+            + Nova Empresa
+          </button>
+        </div>
+        <p className="text-xs text-gray-400 mb-4">O CNPJ e a IE são usados para identificar automaticamente a empresa durante o upload do CSV.</p>
+        <div className="space-y-3">
+          {empresas.map(e => (
+            <div key={e.id} className="flex items-center justify-between p-4 rounded-xl" style={{ background: "#f8f9fa", border: "1px solid #f0f0f0" }}>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-sm text-gray-800">{e.nome}</p>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${e.ativa ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                    {e.ativa ? "Ativa" : "Inativa"}
+                  </span>
+                </div>
+                <div className="flex gap-4 mt-1">
+                  <p className="text-xs text-gray-400">IE: <span className="font-mono text-gray-600">{e.inscricao}</span></p>
+                  <p className="text-xs text-gray-400">CNPJ: <span className="font-mono text-gray-600">{e.cnpj}</span></p>
+                </div>
+              </div>
+              <button onClick={() => setModalEmpresa(e)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold border ml-3" style={{ borderColor: "#e5e7eb", color: "#374151" }}>
+                ✏️ Editar
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Usuários */}
+      <div className="rounded-2xl border p-5" style={{ borderColor: "#f0f0f0" }}>
+        <h3 className="font-bold text-gray-700 mb-4 text-sm uppercase tracking-wide">Usuários</h3>
+        <div className="space-y-2 mb-5">
+          {usuarios.map(u => (
+            <div key={u.id} className="flex items-center justify-between p-3 rounded-xl" style={{ background: "#f8f9fa" }}>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ background: "#E8450A" }}>{u.nome.charAt(0)}</div>
+                <div>
+                  <p className="font-semibold text-sm text-gray-800">{u.nome}</p>
+                  <p className="text-xs text-gray-400">{u.email}</p>
+                </div>
+              </div>
+              <span className={`text-xs px-2 py-1 rounded-full font-semibold ${u.perfil === "admin" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"}`}>{u.perfil}</span>
+            </div>
+          ))}
+        </div>
+        <h4 className="text-sm font-semibold text-gray-600 mb-3">Adicionar Usuário</h4>
+        <div className="grid grid-cols-2 gap-3">
+          <input placeholder="Nome completo" value={novoNome} onChange={e => setNovoNome(e.target.value)} className="border rounded-lg px-3 py-2 text-sm col-span-2" style={{ borderColor: "#e5e7eb" }} />
+          <input placeholder="E-mail" value={novoEmail} onChange={e => setNovoEmail(e.target.value)} className="border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+          <select value={novoPerfil} onChange={e => setNovoPerfil(e.target.value)} className="border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}>
+            <option value="operador">Operador</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button onClick={() => { if (novoNome && novoEmail) { onSalvarUsuario({ id: Date.now().toString(), nome: novoNome, email: novoEmail, perfil: novoPerfil }); setNovoNome(""); setNovoEmail(""); } }}
+            className="col-span-2 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}>
+            Adicionar Usuário
+          </button>
+        </div>
+      </div>
+
+      {modalEmpresa !== null && (
+        <ModalEmpresa
+          empresa={modalEmpresa.id ? modalEmpresa : null}
+          onClose={() => setModalEmpresa(null)}
+          onSalvar={(e) => { onSalvarEmpresa(e); setModalEmpresa(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// APP PRINCIPAL
+// ============================================================
+export default function App() {
+  const [tela, setTela] = useState("dashboard");
+  const [notas, setNotas] = useState([]);
+  const [notaSelecionada, setNotaSelecionada] = useState(null);
+  const [usuarios, setUsuarios] = useState(USUARIOS_MOCK);
+  const [usuarioAtual] = useState(USUARIOS_MOCK[0]);
+  const [ultimaImportacao, setUltimaImportacao] = useState("-");
+  const [logoUrl, setLogoUrl] = useState(null);
+  const [empresas, setEmpresas] = useState(EMPRESAS_INICIAIS);
+  const [importPendente, setImportPendente] = useState(null);
+  const [carregando, setCarregando] = useState(true);
+
+  // Atualiza alias global
+  EMPRESAS = empresas;
+
+  // ---- CARREGAR DADOS DO SUPABASE ----
+  useEffect(() => {
+    carregarTudo();
+    // Realtime: atualiza automaticamente quando outro usuário mudar dados
+    const canal = supabase
+      .channel("realtime-notas")
+      .on("postgres_changes", { event: "*", schema: "public", table: "notas" }, () => carregarNotas())
+      .on("postgres_changes", { event: "*", schema: "public", table: "empresas" }, () => carregarEmpresas())
+      .subscribe();
+    return () => supabase.removeChannel(canal);
+  }, []);
+
+  async function carregarTudo() {
+    setCarregando(true);
+    await Promise.all([carregarNotas(), carregarEmpresas(), carregarConfig()]);
+    setCarregando(false);
+  }
+
+  async function carregarNotas() {
+    const { data } = await supabase.from("notas").select("*").order("criado_em", { ascending: false });
+    if (data) setNotas(data.map(dbParaNota));
+  }
+
+  async function carregarEmpresas() {
+    const { data } = await supabase.from("empresas").select("*").order("nome");
+    if (data && data.length > 0) {
+      setEmpresas(data);
+      EMPRESAS = data;
+    }
+  }
+
+  async function carregarConfig() {
+    const { data } = await supabase.from("configuracoes").select("*").eq("id", "global").single();
+    if (data) {
+      if (data.logo_url) setLogoUrl(data.logo_url);
+      if (data.ultima_importacao) setUltimaImportacao(data.ultima_importacao);
+    }
+  }
+
+  // Converte registro do banco para formato do app
+  function dbParaNota(r) {
+    return {
+      id: r.id, empresa: r.empresa, fornecedor: r.fornecedor, razaoSocial: r.razao_social,
+      numNota: r.num_nota, cfop: r.cfop, dtEmissao: r.dt_emissao, dtApresentacao: r.dt_apresentacao,
+      chave: r.chave, valor: r.valor, qtdeDias: r.qtde_dias, status: r.status,
+      centroCusto: r.centro_custo, finalidade: r.finalidade, responsavel: r.responsavel,
+      noRM: r.no_rm, taxaReanalise: r.taxa_reanalise, taxaDesembaraco: r.taxa_desembaraco,
+      icmsAntecipado: r.icms_antecipado, multa: r.multa, juros: r.juros,
+      dtReanalise: r.dt_reanalise, dtDesembaraco: r.dt_desembaraco, dtPostergacao: r.dt_postergacao,
+      obs: r.obs, dtImportacao: r.dt_importacao, historico: r.historico || []
+    };
+  }
+
+  // Converte formato do app para banco
+  function notaParaDb(n) {
+    return {
+      id: n.id, empresa: n.empresa, fornecedor: n.fornecedor, razao_social: n.razaoSocial,
+      num_nota: n.numNota, cfop: n.cfop, dt_emissao: n.dtEmissao, dt_apresentacao: n.dtApresentacao,
+      chave: n.chave, valor: n.valor, qtde_dias: n.qtdeDias, status: n.status,
+      centro_custo: n.centroCusto, finalidade: n.finalidade, responsavel: n.responsavel,
+      no_rm: n.noRM, taxa_reanalise: n.taxaReanalise, taxa_desembaraco: n.taxaDesembaraco,
+      icms_antecipado: n.icmsAntecipado, multa: n.multa, juros: n.juros,
+      dt_reanalise: n.dtReanalise, dt_desembaraco: n.dtDesembaraco, dt_postergacao: n.dtPostergacao,
+      obs: n.obs, dt_importacao: n.dtImportacao, historico: n.historico,
+      atualizado_em: new Date().toISOString()
+    };
+  }
+
+  const handleSalvarNota = async (notaAtualizada) => {
+    const { error } = await supabase.from("notas").upsert(notaParaDb(notaAtualizada));
+    if (error) { alert("Erro ao salvar nota: " + error.message); return; }
+    setNotas(ns => ns.map(n => n.id === notaAtualizada.id ? notaAtualizada : n));
+    setNotaSelecionada(null);
+  };
+
+  const handleSalvarEmpresa = async (emp) => {
+    const { error } = await supabase.from("empresas").upsert({ id: emp.id, nome: emp.nome, inscricao: emp.inscricao, cnpj: emp.cnpj, ativa: emp.ativa });
+    if (error) { alert("Erro ao salvar empresa: " + error.message); return; }
+    setEmpresas(es => {
+      const idx = es.findIndex(e => e.id === emp.id);
+      if (idx >= 0) return es.map(e => e.id === emp.id ? emp : e);
+      return [...es, emp];
+    });
+  };
+
+  const handleSalvarLogo = async (url) => {
+    setLogoUrl(url);
+    await supabase.from("configuracoes").upsert({ id: "global", logo_url: url, atualizado_em: new Date().toISOString() });
+  };
+
+  const handleImportar = (csvContent, fileName) => {
+    try {
+      const lines = csvContent.trim().split("\n");
+      const novasNotas = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(";");
+        if (cols.length < 8) continue;
+        const chave = cols[6]?.replace(/'/g, "").trim();
+        if (!chave) continue;
+        if (notas.find(n => n.chave === chave)) continue;
+
+        const cnpjArquivo = cols[0]?.trim();
+        const empMatch = empresas.find(e =>
+          e.ativa && (
+            cnpjArquivo === e.cnpj ||
+            chave.startsWith((cnpjArquivo || "").replace(/[^0-9]/g,"").slice(0,14))
+          )
+        );
+
+        novasNotas.push({
+          id: `imp_${Date.now()}_${i}`,
+          empresa: empMatch?.id || "",
+          _cnpjDetectado: cnpjArquivo,
+          _empresaId: empMatch?.id || "",
+          fornecedor: cnpjArquivo,
+          razaoSocial: cols[1]?.trim(),
+          numNota: cols[2]?.trim(),
+          cfop: cols[3]?.trim(),
+          dtEmissao: cols[4]?.trim(),
+          dtApresentacao: cols[5]?.trim() || "-",
+          chave,
+          valor: parseValor(cols[7]),
+          qtdeDias: parseInt(cols[8]) || 0,
+          status: "Identificada",
+          centroCusto: "", finalidade: "", responsavel: "", noRM: null,
+          taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0,
+          dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "",
+          dtImportacao: new Date().toLocaleDateString("pt-BR"),
+          historico: []
+        });
+      }
+      if (novasNotas.length === 0) {
+        alert("Todas as notas do arquivo já estão no sistema.");
+        return;
+      }
+      setImportPendente({ notas: novasNotas, fileName });
+    } catch (e) {
+      alert("Erro ao processar o arquivo. Verifique se é um CSV exportado do DTE.");
+    }
+  };
+
+  const handleConfirmarImport = async (notasFinais) => {
+    try {
+      const registros = notasFinais.map(notaParaDb);
+      const { error } = await supabase.from("notas").upsert(registros, { onConflict: "chave" });
+      if (error) { alert("Erro ao importar: " + error.message); return; }
+      const agora = new Date().toLocaleString("pt-BR");
+      await supabase.from("configuracoes").upsert({ id: "global", ultima_importacao: agora, atualizado_em: new Date().toISOString() });
+      setUltimaImportacao(agora);
+      setImportPendente(null);
+      await carregarNotas();
+      alert(`✅ ${notasFinais.length} nota(s) importada(s) com sucesso!`);
+    } catch (e) {
+      alert("Erro inesperado: " + e.message);
+    }
+  };
+
+  const notasAtivas = notas.filter(n => !["Desembaraçada", "Recusada"].includes(n.status));
+  const criticas = notasAtivas.filter(n => n.qtdeDias >= 60).length;
+
+  const navItems = [
+    { id: "dashboard", label: "Dashboard", icon: "📊" },
+    { id: "notas", label: "Painel de Notas", icon: "📋" },
+    { id: "relatorios", label: "Relatórios", icon: "📈" },
+    { id: "configuracoes", label: "Configurações", icon: "⚙️" },
+  ];
+
+  if (carregando) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#fff4ee", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-white text-2xl mx-auto mb-4" style={{ background: "#E8450A" }}>E</div>
+          <p className="font-bold text-gray-700 text-lg">Enerwatt</p>
+          <p className="text-sm text-gray-400 mt-1">Carregando sistema...</p>
+          <div className="mt-4 w-48 h-1 bg-gray-200 rounded-full mx-auto overflow-hidden">
+            <div className="h-full rounded-full animate-pulse" style={{ background: "#E8450A", width: "60%" }}></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", background: "#fff4ee" }}>
+
+      {/* Sidebar com torres de fundo */}
+      <aside className="w-64 flex-shrink-0 hidden md:flex flex-col relative overflow-hidden" style={{ background: "#fff4ee", minHeight: "100vh" }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ overflow: "hidden" }}>
+          <TorresSVG />
+        </div>
+        <div className="relative z-10 p-5 border-b" style={{ borderColor: "#ffd6b8" }}>
+          {logoUrl
+            ? <img src={logoUrl} alt="Logo" className="h-10 object-contain" />
+            : (
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-lg" style={{ background: "#E8450A" }}>E</div>
+                <div>
+                  <p className="font-bold text-sm" style={{color:"#b84a00"}}>Enerwatt</p>
+                  <p className="text-xs" style={{ color: "#E8450A" }}>Gestão DTE/AM</p>
+                </div>
+              </div>
+            )}
+        </div>
+        <nav className="relative z-10 flex-1 p-4 space-y-1">
+          {navItems.map(item => (
+            <button key={item.id} onClick={() => setTela(item.id)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left"
+              style={tela === item.id ? { background: "#E8450A", color: "white" } : { color: "#c25a1a" }}>
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
+              {item.id === "dashboard" && criticas > 0 && (
+                <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: tela === "dashboard" ? "rgba(255,255,255,0.3)" : "#c0392b", color: "white" }}>{criticas}</span>
+              )}
+            </button>
+          ))}
+        </nav>
+        <div className="relative z-10 p-4 border-t" style={{ borderColor: "#ffd6b8" }}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ background: "#E8450A" }}>{usuarioAtual.nome.charAt(0)}</div>
+            <div>
+              <p className="text-xs font-semibold" style={{color:"#b84a00"}}>{usuarioAtual.nome}</p>
+              <p className="text-xs" style={{ color: "#E8450A" }}>{usuarioAtual.perfil}</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <header className="flex items-center justify-between px-6 py-4 bg-white border-b" style={{ borderColor: "#f0f0f0" }}>
+          <div>
+            <h1 className="font-black text-gray-800 text-lg">
+              {navItems.find(n => n.id === tela)?.icon} {navItems.find(n => n.id === tela)?.label}
+            </h1>
+            <p className="text-xs text-gray-400">Sistema de Controle — Desembaraço Extemporâneo DTE/AM</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-400 hidden sm:block">06/03/2026</span>
+            {criticas > 0 && (
+              <span className="text-xs font-bold px-3 py-1 rounded-full text-white" style={{ background: "#c0392b" }}>🔴 {criticas} crítica(s)</span>
+            )}
+          </div>
+        </header>
+        <div className="flex-1 overflow-y-auto p-6" style={{ background: "#ffffff" }}>
+          {tela === "dashboard" && <Dashboard notas={notas} onVerNota={n => setNotaSelecionada(n)} onIrParaPainel={() => setTela("notas")} />}
+          {tela === "notas" && <PainelNotas notas={notas} onVerNota={n => setNotaSelecionada(n)} onImportar={handleImportar} ultimaImportacao={ultimaImportacao} />}
+          {tela === "relatorios" && <Relatorios notas={notas} />}
+          {tela === "configuracoes" && <Configuracoes usuarios={usuarios} onSalvarUsuario={u => setUsuarios(us => [...us, u])} logoUrl={logoUrl} onSalvarLogo={handleSalvarLogo} empresas={empresas} onSalvarEmpresa={handleSalvarEmpresa} />}
+        </div>
+      </main>
+
+      {notaSelecionada && (
+        <ModalNota nota={notaSelecionada} onClose={() => setNotaSelecionada(null)} onSave={handleSalvarNota} usuarioAtual={usuarioAtual} />
+      )}
+
+      {importPendente && (
+        <ModalConfirmImport
+          notasParaImportar={importPendente.notas}
+          empresas={empresas}
+          fileName={importPendente.fileName}
+          usuarioNome={usuarioAtual.nome}
+          onConfirmar={handleConfirmarImport}
+          onCancelar={() => setImportPendente(null)}
+        />
+      )}
+    </div>
+  );
+}
