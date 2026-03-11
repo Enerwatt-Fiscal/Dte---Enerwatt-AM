@@ -1,6 +1,155 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabase";
 
+// Exportação Excel via SheetJS (carregado via CDN no index.html)
+function exportarExcel(filtradas, empresas, periodo) {
+  try {
+    const XLSX = window.XLSX;
+    if (!XLSX) { alert("Biblioteca Excel não carregada. Recarregue a página."); return; }
+    
+    const fmtMoeda = (v) => v ? `R$ ${Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "R$ 0,00";
+    const nomeEmp = (id) => { const e = empresas.find(x => x.id === id); return e ? e.nome : id; };
+    
+    const dados = filtradas.map(n => ({
+      "Empresa": nomeEmp(n.empresa),
+      "Fornecedor": n.fornecedor,
+      "Razão Social": n.razaoSocial,
+      "Nº Nota": n.numNota,
+      "CFOP": n.cfop,
+      "Dt. Emissão": n.dtEmissao,
+      "Dt. Apresentação": n.dtApresentacao,
+      "Chave NF-e": n.chave,
+      "Valor": Number(n.valor),
+      "Dias": n.qtdeDias,
+      "Status": n.status,
+      "Finalidade": n.finalidade,
+      "Centro de Custo": n.centroCusto,
+      "Responsável": n.responsavel,
+      "No RM": n.noRM === true ? "Sim" : n.noRM === false ? "Não" : "-",
+      "Taxa Reanálise": Number(n.taxaReanalise),
+      "Taxa Desembaraço": Number(n.taxaDesembaraco),
+      "ICMS Antecipado": Number(n.icmsAntecipado),
+      "Multa": Number(n.multa),
+      "Juros": Number(n.juros),
+      "Total Custos": Number(n.taxaReanalise||0) + Number(n.taxaDesembaraco||0) + Number(n.icmsAntecipado||0) + Number(n.multa||0) + Number(n.juros||0),
+      "Obs": n.obs,
+      "Dt. Importação": n.dtImportacao,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Notas DTE");
+    
+    // Largura das colunas
+    ws["!cols"] = [
+      {wch:20},{wch:20},{wch:30},{wch:12},{wch:8},{wch:12},{wch:14},
+      {wch:48},{wch:14},{wch:8},{wch:20},{wch:18},{wch:18},{wch:20},
+      {wch:8},{wch:16},{wch:18},{wch:18},{wch:12},{wch:12},{wch:14},{wch:30},{wch:14}
+    ];
+    
+    const hoje = new Date().toLocaleDateString("pt-BR").replace(/\//g,"-");
+    XLSX.writeFile(wb, `DTE-Enerwatt-${periodo}-${hoje}.xlsx`);
+  } catch(e) {
+    alert("Erro ao gerar Excel: " + e.message);
+  }
+}
+
+// Exportação PDF via jsPDF (carregado via CDN no index.html)
+function exportarPDF(filtradas, empresas, periodo) {
+  try {
+    const { jsPDF } = window.jspdf;
+    if (!jsPDF) { alert("Biblioteca PDF não carregada. Recarregue a página."); return; }
+    
+    const nomeEmp = (id) => { const e = empresas.find(x => x.id === id); return e ? e.nome : id; };
+    const fmtMoeda = (v) => `R$ ${Number(v||0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    
+    const hoje = new Date().toLocaleDateString("pt-BR");
+    
+    // Cabeçalho
+    doc.setFillColor(232, 69, 10);
+    doc.rect(0, 0, 297, 18, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("ENERWATT — Gestão DTE/AM", 10, 12);
+    doc.setFontSize(10);
+    doc.text(`Relatório ${periodo.toUpperCase()} — ${hoje}`, 200, 12);
+    
+    // Resumo
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Total de notas: ${filtradas.length}`, 10, 26);
+    const totalCustos = filtradas.reduce((s,n) => s + Number(n.taxaReanalise||0) + Number(n.taxaDesembaraco||0) + Number(n.icmsAntecipado||0) + Number(n.multa||0) + Number(n.juros||0), 0);
+    doc.text(`Total custos registrados: ${fmtMoeda(totalCustos)}`, 80, 26);
+    doc.text(`Críticas (60+ dias): ${filtradas.filter(n => n.qtdeDias >= 60).length}`, 200, 26);
+    
+    // Tabela
+    const colunas = ["Empresa", "Razão Social", "Nº Nota", "Emissão", "Dias", "Valor", "Status", "Total Custos"];
+    const linhas = filtradas.map(n => [
+      nomeEmp(n.empresa).slice(0,18),
+      (n.razaoSocial||"").slice(0,25),
+      n.numNota||"",
+      n.dtEmissao||"",
+      String(n.qtdeDias||0),
+      fmtMoeda(n.valor),
+      n.status||"",
+      fmtMoeda(Number(n.taxaReanalise||0)+Number(n.taxaDesembaraco||0)+Number(n.icmsAntecipado||0)+Number(n.multa||0)+Number(n.juros||0))
+    ]);
+    
+    // Cabeçalho da tabela
+    let y = 35;
+    const cols = [10, 55, 110, 133, 152, 165, 195, 235];
+    const colW = [44, 54, 22, 18, 12, 29, 39, 35];
+    
+    doc.setFillColor(245, 245, 245);
+    doc.rect(8, y-5, 281, 8, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    colunas.forEach((c, i) => doc.text(c, cols[i], y));
+    y += 6;
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    linhas.forEach((linha, idx) => {
+      if (y > 190) {
+        doc.addPage();
+        y = 15;
+        doc.setFillColor(245,245,245);
+        doc.rect(8, y-5, 281, 8, "F");
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(8);
+        colunas.forEach((c,i) => doc.text(c, cols[i], y));
+        y += 6;
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(7.5);
+      }
+      if (idx % 2 === 0) { doc.setFillColor(252,247,244); doc.rect(8, y-4, 281, 6, "F"); }
+      doc.setTextColor(50,50,50);
+      linha.forEach((cel, i) => doc.text(String(cel).slice(0, colW[i]*1.5), cols[i], y));
+      // Colorir status
+      if (linha[6] && linha[4] && parseInt(linha[4]) >= 60) doc.setTextColor(192,57,43);
+      y += 6;
+      doc.setTextColor(50,50,50);
+    });
+    
+    // Rodapé
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(150,150,150);
+      doc.text(`Enerwatt Engenharia — Sistema DTE/AM — Gerado em ${hoje} — Página ${i}/${pageCount}`, 10, 205);
+    }
+    
+    const hoje2 = new Date().toLocaleDateString("pt-BR").replace(/\//g,"-");
+    doc.save(`DTE-Enerwatt-${periodo}-${hoje2}.pdf`);
+  } catch(e) {
+    alert("Erro ao gerar PDF: " + e.message);
+  }
+}
+
 // ============================================================
 // DADOS INICIAIS — importados dos CSVs das 3 empresas
 // ============================================================
@@ -69,10 +218,72 @@ const NOTAS_INICIAIS = [
   { id: "31", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4139", cfop: "6102", dtEmissao: "24/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041391996657711", valor: 1960.00, qtdeDias: 10, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
 ];
 
-const USUARIOS_MOCK = [
-  { id: "u1", nome: "Admin DTE", email: "admin@enerwatt.com.br", perfil: "admin" },
-  { id: "u2", nome: "Operador 1", email: "fiscal@enerwatt.com.br", perfil: "operador" },
-];
+// Usuários carregados do Supabase dinamicamente
+
+// ============================================================
+// TELA DE LOGIN
+// ============================================================
+function TelaLogin({ onLogin }) {
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !senha) { setErro("Preencha e-mail e senha."); return; }
+    setCarregando(true);
+    setErro("");
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
+    if (error) {
+      setErro("E-mail ou senha inválidos.");
+      setCarregando(false);
+      return;
+    }
+    // Buscar perfil do usuário na tabela usuarios
+    const { data: perfil } = await supabase.from("usuarios").select("*").eq("email", email).single();
+    onLogin({ ...data.user, nome: perfil?.nome || email, perfil: perfil?.perfil || "operador" });
+    setCarregando(false);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "#fff4ee", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        {/* Header laranja */}
+        <div className="p-8 text-center" style={{ background: "#E8450A" }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-white text-2xl mx-auto mb-3" style={{ background: "rgba(255,255,255,0.2)" }}>E</div>
+          <p className="font-black text-white text-xl">Enerwatt</p>
+          <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.8)" }}>Gestão DTE/AM</p>
+        </div>
+        {/* Formulário */}
+        <div className="p-8 space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase">E-mail</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleLogin()}
+              placeholder="seu@enerwatt.com.br"
+              className="mt-1 w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2" 
+              style={{ borderColor: "#e5e7eb", focusRingColor: "#E8450A" }} />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase">Senha</label>
+            <input type="password" value={senha} onChange={e => setSenha(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleLogin()}
+              placeholder="••••••••"
+              className="mt-1 w-full border rounded-xl px-4 py-3 text-sm focus:outline-none" 
+              style={{ borderColor: "#e5e7eb" }} />
+          </div>
+          {erro && <p className="text-xs text-red-500 font-semibold">{erro}</p>}
+          <button onClick={handleLogin} disabled={carregando}
+            className="w-full py-3 rounded-xl text-sm font-bold text-white disabled:opacity-60 mt-2"
+            style={{ background: "#E8450A" }}>
+            {carregando ? "Entrando..." : "Entrar"}
+          </button>
+          <p className="text-xs text-center text-gray-400 mt-4">Acesso restrito — Enerwatt Engenharia</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ============================================================
 // HELPERS
@@ -866,9 +1077,9 @@ function Relatorios({ notas }) {
             {temFiltro && <button onClick={limpar} className="text-xs font-semibold" style={{ color: "#E8450A" }}>✕ Limpar</button>}
             <div className="flex gap-2">
               <button className="px-4 py-2 rounded-lg text-sm font-semibold border" style={{ borderColor: "#E8450A", color: "#E8450A" }}
-                onClick={() => alert("Exportação Excel — disponível na versão com backend")}>📊 Excel</button>
+                onClick={() => exportarExcel(filtradas, EMPRESAS, periodo)}>📊 Excel</button>
               <button className="px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}
-                onClick={() => alert("Exportação PDF — disponível na versão com backend")}>📄 PDF</button>
+                onClick={() => exportarPDF(filtradas, EMPRESAS, periodo)}>📄 PDF</button>
             </div>
           </div>
         </div>
@@ -1148,11 +1359,12 @@ function ModalConfirmImport({ notasParaImportar, empresas, onConfirmar, onCancel
 // ============================================================
 // TELA: CONFIGURAÇÕES
 // ============================================================
-function Configuracoes({ usuarios, onSalvarUsuario, logoUrl, onSalvarLogo, empresas, onSalvarEmpresa }) {
+function Configuracoes({ usuarios, onSalvarUsuario, onEditarUsuario, onExcluirUsuario, logoUrl, onSalvarLogo, empresas, onSalvarEmpresa, perfilAtual }) {
   const [novoNome, setNovoNome] = useState("");
   const [novoEmail, setNovoEmail] = useState("");
   const [novoPerfil, setNovoPerfil] = useState("operador");
-  const [modalEmpresa, setModalEmpresa] = useState(null); // null = fechado, {} = nova, {id,...} = editar
+  const [modalEmpresa, setModalEmpresa] = useState(null);
+  const [modalUsuario, setModalUsuario] = useState(null); // null = fechado, {id,...} = editar
 
   const handleLogo = (e) => {
     const file = e.target.files[0];
@@ -1232,11 +1444,19 @@ function Configuracoes({ usuarios, onSalvarUsuario, logoUrl, onSalvarLogo, empre
                   <p className="text-xs text-gray-400">{u.email}</p>
                 </div>
               </div>
-              <span className={`text-xs px-2 py-1 rounded-full font-semibold ${u.perfil === "admin" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"}`}>{u.perfil}</span>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs px-2 py-1 rounded-full font-semibold ${u.perfil === "admin" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"}`}>{u.perfil}</span>
+                <button onClick={() => setModalUsuario(u)} className="text-xs px-2 py-1 rounded-lg border font-semibold" style={{ borderColor: "#e5e7eb", color: "#374151" }}>✏️</button>
+                {perfilAtual === "admin" && (
+                  <button onClick={() => { if (window.confirm(`Excluir usuário ${u.nome}?`)) onExcluirUsuario(u.id); }}
+                    className="text-xs px-2 py-1 rounded-lg border font-semibold" style={{ borderColor: "#fecaca", color: "#dc2626" }}>🗑️</button>
+                )}
+              </div>
             </div>
           ))}
         </div>
         <h4 className="text-sm font-semibold text-gray-600 mb-3">Adicionar Usuário</h4>
+        <p className="text-xs text-gray-400 mb-3">A senha inicial será <strong>Enerwatt@2024</strong> — o usuário pode alterar depois.</p>
         <div className="grid grid-cols-2 gap-3">
           <input placeholder="Nome completo" value={novoNome} onChange={e => setNovoNome(e.target.value)} className="border rounded-lg px-3 py-2 text-sm col-span-2" style={{ borderColor: "#e5e7eb" }} />
           <input placeholder="E-mail" value={novoEmail} onChange={e => setNovoEmail(e.target.value)} className="border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
@@ -1244,7 +1464,7 @@ function Configuracoes({ usuarios, onSalvarUsuario, logoUrl, onSalvarLogo, empre
             <option value="operador">Operador</option>
             <option value="admin">Admin</option>
           </select>
-          <button onClick={() => { if (novoNome && novoEmail) { onSalvarUsuario({ id: Date.now().toString(), nome: novoNome, email: novoEmail, perfil: novoPerfil }); setNovoNome(""); setNovoEmail(""); } }}
+          <button onClick={() => { if (novoNome && novoEmail) { onSalvarUsuario({ id: Date.now().toString(), nome: novoNome, email: novoEmail, perfil: novoPerfil }); setNovoNome(""); setNovoEmail(""); setNovoPerfil("operador"); } }}
             className="col-span-2 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}>
             Adicionar Usuário
           </button>
@@ -1258,6 +1478,59 @@ function Configuracoes({ usuarios, onSalvarUsuario, logoUrl, onSalvarLogo, empre
           onSalvar={(e) => { onSalvarEmpresa(e); setModalEmpresa(null); }}
         />
       )}
+
+      {modalUsuario !== null && (
+        <ModalEditarUsuario
+          usuario={modalUsuario}
+          onClose={() => setModalUsuario(null)}
+          onSalvar={(u) => { onEditarUsuario(u); setModalUsuario(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// MODAL EDITAR USUARIO
+// ============================================================
+function ModalEditarUsuario({ usuario, onClose, onSalvar }) {
+  const [form, setForm] = useState({ ...usuario });
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md m-4">
+        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "#f0f0f0" }}>
+          <h2 className="font-bold text-gray-800">Editar Usuário</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl font-light">×</button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase">Nome completo</label>
+            <input value={form.nome} onChange={e => set("nome", e.target.value)}
+              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase">E-mail</label>
+            <input value={form.email} onChange={e => set("email", e.target.value)}
+              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase">Perfil</label>
+            <select value={form.perfil} onChange={e => set("perfil", e.target.value)}
+              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}>
+              <option value="operador">Operador</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 p-5 border-t" style={{ borderColor: "#f0f0f0" }}>
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border text-sm text-gray-600" style={{ borderColor: "#e5e7eb" }}>Cancelar</button>
+          <button onClick={() => onSalvar(form)} className="px-6 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "#E8450A" }}>
+            Salvar Alterações
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1269,19 +1542,36 @@ export default function App() {
   const [tela, setTela] = useState("dashboard");
   const [notas, setNotas] = useState([]);
   const [notaSelecionada, setNotaSelecionada] = useState(null);
-  const [usuarios, setUsuarios] = useState(USUARIOS_MOCK);
-  const [usuarioAtual] = useState(USUARIOS_MOCK[0]);
+  const [usuarios, setUsuarios] = useState([]);
+  const [usuarioAtual, setUsuarioAtual] = useState(null);
   const [ultimaImportacao, setUltimaImportacao] = useState("-");
   const [logoUrl, setLogoUrl] = useState(null);
   const [empresas, setEmpresas] = useState(EMPRESAS_INICIAIS);
   const [importPendente, setImportPendente] = useState(null);
   const [carregando, setCarregando] = useState(true);
+  const [loginCarregando, setLoginCarregando] = useState(true);
 
   // Atualiza alias global
   EMPRESAS = empresas;
 
+  // Verificar sessão ativa ao carregar
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        supabase.from("usuarios").select("*").eq("email", session.user.email).single().then(({ data }) => {
+          setUsuarioAtual({ ...session.user, nome: data?.nome || session.user.email, perfil: data?.perfil || "operador" });
+        });
+      }
+      setLoginCarregando(false);
+    });
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) setUsuarioAtual(null);
+    });
+  }, []);
+
   // ---- CARREGAR DADOS DO SUPABASE ----
   useEffect(() => {
+    if (!usuarioAtual) return;
     carregarTudo();
     // Realtime: atualiza automaticamente quando outro usuário mudar dados
     const canal = supabase
@@ -1294,8 +1584,13 @@ export default function App() {
 
   async function carregarTudo() {
     setCarregando(true);
-    await Promise.all([carregarNotas(), carregarEmpresas(), carregarConfig()]);
+    await Promise.all([carregarNotas(), carregarEmpresas(), carregarConfig(), carregarUsuarios()]);
     setCarregando(false);
+  }
+
+  async function carregarUsuarios() {
+    const { data } = await supabase.from("usuarios").select("*").order("nome");
+    if (data) setUsuarios(data);
   }
 
   async function carregarNotas() {
@@ -1368,6 +1663,34 @@ export default function App() {
   const handleSalvarLogo = async (url) => {
     setLogoUrl(url);
     await supabase.from("configuracoes").upsert({ id: "global", logo_url: url, atualizado_em: new Date().toISOString() });
+  };
+
+  const handleSalvarUsuario = async (u) => {
+    // Cria usuário no Supabase Auth
+    const { data, error } = await supabase.auth.admin ? 
+      { data: null, error: { message: "use tabela" } } :
+      { data: null, error: { message: "use tabela" } };
+    // Salva na tabela usuarios
+    const { error: err } = await supabase.from("usuarios").upsert({ id: u.id, nome: u.nome, email: u.email, perfil: u.perfil });
+    if (err) { alert("Erro ao salvar usuário: " + err.message); return; }
+    await carregarUsuarios();
+  };
+
+  const handleEditarUsuario = async (u) => {
+    const { error } = await supabase.from("usuarios").update({ nome: u.nome, email: u.email, perfil: u.perfil }).eq("id", u.id);
+    if (error) { alert("Erro ao editar: " + error.message); return; }
+    await carregarUsuarios();
+  };
+
+  const handleExcluirUsuario = async (id) => {
+    const { error } = await supabase.from("usuarios").delete().eq("id", id);
+    if (error) { alert("Erro ao excluir: " + error.message); return; }
+    await carregarUsuarios();
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUsuarioAtual(null);
   };
 
   const handleImportar = (csvContent, fileName) => {
@@ -1447,6 +1770,21 @@ export default function App() {
     { id: "configuracoes", label: "Configurações", icon: "⚙️" },
   ];
 
+  if (loginCarregando) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#fff4ee" }}>
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-white text-2xl mx-auto mb-4" style={{ background: "#E8450A" }}>E</div>
+          <p className="text-sm text-gray-400 mt-2">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!usuarioAtual) {
+    return <TelaLogin onLogin={(user) => { setUsuarioAtual(user); }} />;
+  }
+
   if (carregando) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#fff4ee", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
@@ -1498,11 +1836,12 @@ export default function App() {
         </nav>
         <div className="relative z-10 p-4 border-t" style={{ borderColor: "#ffd6b8" }}>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ background: "#E8450A" }}>{usuarioAtual.nome.charAt(0)}</div>
-            <div>
-              <p className="text-xs font-semibold" style={{color:"#b84a00"}}>{usuarioAtual.nome}</p>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0" style={{ background: "#E8450A" }}>{usuarioAtual.nome.charAt(0)}</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold truncate" style={{color:"#b84a00"}}>{usuarioAtual.nome}</p>
               <p className="text-xs" style={{ color: "#E8450A" }}>{usuarioAtual.perfil}</p>
             </div>
+            <button onClick={handleLogout} title="Sair" className="text-xs px-2 py-1 rounded-lg font-semibold" style={{ color: "#b84a00", background: "rgba(232,69,10,0.1)" }}>Sair</button>
           </div>
         </div>
       </aside>
@@ -1527,7 +1866,7 @@ export default function App() {
           {tela === "dashboard" && <Dashboard notas={notas} onVerNota={n => setNotaSelecionada(n)} onIrParaPainel={() => setTela("notas")} />}
           {tela === "notas" && <PainelNotas notas={notas} onVerNota={n => setNotaSelecionada(n)} onImportar={handleImportar} ultimaImportacao={ultimaImportacao} />}
           {tela === "relatorios" && <Relatorios notas={notas} />}
-          {tela === "configuracoes" && <Configuracoes usuarios={usuarios} onSalvarUsuario={u => setUsuarios(us => [...us, u])} logoUrl={logoUrl} onSalvarLogo={handleSalvarLogo} empresas={empresas} onSalvarEmpresa={handleSalvarEmpresa} />}
+          {tela === "configuracoes" && <Configuracoes usuarios={usuarios} onSalvarUsuario={handleSalvarUsuario} onEditarUsuario={handleEditarUsuario} onExcluirUsuario={handleExcluirUsuario} logoUrl={logoUrl} onSalvarLogo={handleSalvarLogo} empresas={empresas} onSalvarEmpresa={handleSalvarEmpresa} perfilAtual={usuarioAtual.perfil} />}
         </div>
       </main>
 
