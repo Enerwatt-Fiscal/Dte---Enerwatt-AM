@@ -1556,17 +1556,28 @@ export default function App() {
 
   // Verificar sessão ativa ao carregar
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        supabase.from("usuarios").select("*").eq("email", session.user.email).single().then(({ data }) => {
-          setUsuarioAtual({ ...session.user, nome: data?.nome || session.user.email, perfil: data?.perfil || "operador" });
-        });
+    const verificarSessao = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          try {
+            const { data } = await supabase.from("usuarios").select("*").eq("email", session.user.email).single();
+            setUsuarioAtual({ ...session.user, nome: data?.nome || session.user.email, perfil: data?.perfil || "operador" });
+          } catch(e) {
+            setUsuarioAtual({ ...session.user, nome: session.user.email, perfil: "operador" });
+          }
+        }
+      } catch(e) {
+        console.error("Erro ao verificar sessao:", e);
+      } finally {
+        setLoginCarregando(false);
       }
-      setLoginCarregando(false);
-    });
-    supabase.auth.onAuthStateChange((_event, session) => {
+    };
+    verificarSessao();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) setUsuarioAtual(null);
     });
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   // ---- CARREGAR DADOS DO SUPABASE ----
