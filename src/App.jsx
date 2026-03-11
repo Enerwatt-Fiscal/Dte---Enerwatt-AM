@@ -1591,7 +1591,7 @@ export default function App() {
       .on("postgres_changes", { event: "*", schema: "public", table: "empresas" }, () => carregarEmpresas())
       .subscribe();
     return () => supabase.removeChannel(canal);
-  }, []);
+  }, [usuarioAtual]);
 
   async function carregarTudo() {
     setCarregando(true);
