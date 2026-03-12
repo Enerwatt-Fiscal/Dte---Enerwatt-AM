@@ -178,7 +178,7 @@ function gerarGraficoBarras(labels, values, colors, titulo, w, h) {
   const cw = w - pad.left - pad.right;
   const ch = h - pad.top - pad.bottom;
   const maxVal = Math.max(...values, 1);
-  const barW = Math.max(4, (cw / values.length) * 0.6);
+  const barW = Math.max(8, Math.min(40, (cw / Math.max(values.length, 1)) * 0.65));
   const gap = (cw / values.length) * 0.4;
 
   // Título
@@ -410,29 +410,24 @@ function exportarPDF(filtradas, empresas, periodo) {
     const coresFaixas = ["#4db8b8","#4db8b8","#f0a500","#f0a500","#E8450A","#E8450A","#c0392b","#7b0000"];
     const g1 = gerarGraficoBarras(faixasLabels, faixasVals, coresFaixas, "Distribuição de Notas por Faixa de Prazo", 190, 90);
     doc.setFillColor(255, 255, 255);
-    doc.roundedRect(9, 70, 192, 92, 2, 2, "F");
-    doc.addImage(g1, "PNG", 9, 70, 192, 92);
+    doc.roundedRect(9, 70, 192, 88, 2, 2, "F");
+    doc.addImage(g1, "PNG", 9, 70, 192, 88);
 
     // ---- GRÁFICO 2: Composição dos custos (pizza) ----
     const custoLabels = ["Taxas", "ICMS Antecipado", "Multas", "Juros"];
     const custoVals = [totalTaxas, totalIcms, totalMultas, totalJuros];
     const coresCustos = ["#1a4a4a", "#4db8b8", "#E8450A", "#f0a500"];
-    const g2 = gerarGraficoPizza(custoLabels, custoVals, coresCustos, "Composição dos Custos Registrados", 192, 80);
+    const g2 = gerarGraficoPizza(custoLabels, custoVals, coresCustos, "Composição dos Custos Registrados", 192, 95);
     doc.setFillColor(255, 255, 255);
-    doc.roundedRect(9, 167, 192, 82, 2, 2, "F");
-    doc.addImage(g2, "PNG", 9, 167, 192, 82);
+    doc.roundedRect(9, 162, 192, 90, 2, 2, "F");
+    doc.addImage(g2, "PNG", 9, 162, 192, 90);
 
-    // Linha separadora entre gráficos
-    doc.setDrawColor(220, 232, 232);
-    doc.setLineWidth(0.3);
-    doc.line(9, 165, 201, 165);
-
-    // ---- RESUMO NUMÉRICO dos custos (abaixo da pizza) ----
-    const y0 = 253;
+    // ---- RESUMO NUMÉRICO dos custos ----
+    const y0 = 256;
     doc.setFillColor(...CINZA);
-    doc.roundedRect(9, y0, 192, 30, 2, 2, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...PETROL);
-    doc.text("RESUMO DE CUSTOS", 14, y0 + 7);
+    doc.roundedRect(9, y0, 192, 28, 2, 2, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(...PETROL);
+    doc.text("RESUMO DE CUSTOS — NOTAS ATIVAS", 14, y0 + 7);
     const custoCols = [
       { label: "Taxas", val: fmtM(totalTaxas) },
       { label: "ICMS Antecipado", val: fmtM(totalIcms) },
@@ -443,11 +438,11 @@ function exportarPDF(filtradas, empresas, periodo) {
     custoCols.forEach((c, i) => {
       const x = 14 + i * 38;
       doc.setFont("helvetica", "normal"); doc.setFontSize(6.5); doc.setTextColor(90, 120, 120);
-      doc.text(c.label, x, y0 + 16);
+      doc.text(c.label, x, y0 + 15);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(i === 4 ? 232 : 26, i === 4 ? 69 : 74, i === 4 ? 10 : 74);
       doc.setFontSize(7.5);
-      doc.text(c.val, x, y0 + 24);
+      doc.text(c.val, x, y0 + 22);
     });
 
     // =============================================
@@ -468,13 +463,13 @@ function exportarPDF(filtradas, empresas, periodo) {
     const empNomes = Object.keys(empMap);
     const empQtdes = empNomes.map(e => empMap[e].qtde);
     const empCriticas = empNomes.map(e => empMap[e].criticas);
-    const g3a = gerarGraficoBarras(empNomes, empQtdes, ["#1a4a4a","#4db8b8","#E8450A"], "Notas por Empresa — Quantidade Total", 192, 70);
-    const g3b = gerarGraficoBarras(empNomes, empCriticas, ["#c0392b","#E8450A","#f0a500"], "Notas Críticas (60+ dias) por Empresa", 192, 70);
+    const g3a = gerarGraficoBarras(empNomes, empQtdes, ["#1a4a4a","#4db8b8","#E8450A"], "Notas por Empresa — Quantidade Total", 192, 80);
+    const g3b = gerarGraficoBarras(empNomes, empCriticas, ["#c0392b","#E8450A","#f0a500"], "Notas Críticas (60+ dias) por Empresa", 192, 80);
 
-    doc.setFillColor(255,255,255); doc.roundedRect(9, 20, 192, 72, 2, 2, "F");
-    doc.addImage(g3a, "PNG", 9, 20, 192, 72);
-    doc.setFillColor(255,255,255); doc.roundedRect(9, 96, 192, 72, 2, 2, "F");
-    doc.addImage(g3b, "PNG", 9, 96, 192, 72);
+    doc.setFillColor(255,255,255); doc.roundedRect(9, 20, 192, 82, 2, 2, "F");
+    doc.addImage(g3a, "PNG", 9, 20, 192, 82);
+    doc.setFillColor(255,255,255); doc.roundedRect(9, 106, 192, 82, 2, 2, "F");
+    doc.addImage(g3b, "PNG", 9, 106, 192, 82);
 
     // ---- RANKING DE FORNECEDORES ----
     const fornMap = {};
@@ -487,7 +482,7 @@ function exportarPDF(filtradas, empresas, periodo) {
     });
     const ranking = Object.entries(fornMap).sort((a,b) => b[1].custos - a[1].custos).slice(0, 10);
 
-    let ry = 174;
+    let ry = 192;
     doc.setFillColor(...CINZA);
     doc.rect(0, ry - 4, PW, 12, "F");
     doc.setFillColor(...LARANJA);
@@ -1041,6 +1036,10 @@ function DrawerAlertas({ notas, filtro, onClose, onVerNota }) {
   } else if (filtro === "pagamento") {
     lista = ativas.filter(n => n.status === "Aguardando Pagamento");
     titulo = "💰 Aguardando Pagamento";
+  } else if (filtro === "comCusto") {
+    lista = ativas.filter(n => (n.taxaReanalise||0)+(n.taxaDesembaraco||0)+(n.icmsAntecipado||0)+(n.multa||0)+(n.juros||0) > 0)
+      .sort((a, b) => ((b.taxaReanalise||0)+(b.taxaDesembaraco||0)+(b.icmsAntecipado||0)+(b.multa||0)+(b.juros||0)) - ((a.taxaReanalise||0)+(a.taxaDesembaraco||0)+(a.icmsAntecipado||0)+(a.multa||0)+(a.juros||0)));
+    titulo = "📊 Custos Registrados — Notas Ativas";
   } else if (filtro?.startsWith("empresa_")) {
     const empId = filtro.replace("empresa_", "");
     lista = ativas.filter(n => n.empresa === empId).sort((a, b) => b.qtdeDias - a.qtdeDias);
@@ -1096,7 +1095,7 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
   const acima25k = ativas.filter(n => n.valor > 25000);
   const aguardPag = ativas.filter(n => n.status === "Aguardando Pagamento");
   const desembaracadas = notas.filter(n => n.status === "Desembaraçada");
-  const totalCustos = notas.reduce((s, n) => s + (n.taxaReanalise || 0) + (n.taxaDesembaraco || 0) + (n.icmsAntecipado || 0) + (n.multa || 0) + (n.juros || 0), 0);
+  const totalCustos = ativas.reduce((s, n) => s + (n.taxaReanalise || 0) + (n.taxaDesembaraco || 0) + (n.icmsAntecipado || 0) + (n.multa || 0) + (n.juros || 0), 0);
 
   const porEmpresa = EMPRESAS.map(e => ({
     ...e,
@@ -1112,7 +1111,7 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
     { label: "Acima de R$ 25k", valor: acima25k.length, sub: "Risco multa 10% • clique para ver", cor: "#7e3af2", bg: "#f5f3ff", icon: "⚠️", filtro: "acima25k", clicavel: true },
     { label: "Aguard. Pagamento", valor: aguardPag.length, sub: "Financeiro pendente • clique para ver", cor: "#1a56db", bg: "#eff6ff", icon: "💰", filtro: "pagamento", clicavel: true },
     { label: "Desembaraçadas", valor: desembaracadas.length, sub: "Concluídas no período", cor: "#2d6a4f", bg: "#f0fdf4", icon: "✅", filtro: null, clicavel: false },
-    { label: "Custos Registrados", valor: fmtMoeda(totalCustos), sub: "Taxas + ICMS + Multas", cor: "#E8450A", bg: "#f0f8f8", icon: "📊", filtro: null, clicavel: false },
+    { label: "Custos Registrados", valor: fmtMoeda(totalCustos), sub: "Notas ativas • clique para ver", cor: "#E8450A", bg: "#f0f8f8", icon: "📊", filtro: "comCusto", clicavel: true },
   ];
 
   return (
