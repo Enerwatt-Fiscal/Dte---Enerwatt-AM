@@ -163,99 +163,424 @@ function exportarExcel(filtradas, empresas, periodo) {
   }
 }
 
-// Exportação PDF via jsPDF (carregado via CDN no index.html)
+// ============================================================
+// EXPORTAÇÃO PDF COM GRÁFICOS — jsPDF + Canvas nativo
+// ============================================================
+function gerarGraficoBarras(labels, values, colors, titulo, w, h) {
+  const canvas = document.createElement("canvas");
+  canvas.width = w * 2; canvas.height = h * 2;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(2, 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, w, h);
+
+  const pad = { top: 32, right: 14, bottom: 48, left: 58 };
+  const cw = w - pad.left - pad.right;
+  const ch = h - pad.top - pad.bottom;
+  const maxVal = Math.max(...values, 1);
+  const barW = Math.max(4, (cw / values.length) * 0.6);
+  const gap = (cw / values.length) * 0.4;
+
+  // Título
+  ctx.fillStyle = "#1a4a4a";
+  ctx.font = "bold 9px Arial";
+  ctx.textAlign = "left";
+  ctx.fillText(titulo, pad.left, 18);
+
+  // Grid linhas
+  ctx.strokeStyle = "#e8f0f0";
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (ch / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+    const val = maxVal * (1 - i / 4);
+    ctx.fillStyle = "#8aacac";
+    ctx.font = "6px Arial";
+    ctx.textAlign = "right";
+    ctx.fillText(val >= 1000 ? (val/1000).toFixed(0)+"k" : val.toFixed(0), pad.left - 4, y + 2);
+  }
+
+  // Barras
+  values.forEach((v, i) => {
+    const x = pad.left + (cw / values.length) * i + gap / 2;
+    const bh = (v / maxVal) * ch;
+    const y = pad.top + ch - bh;
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x, y, barW, bh, [3, 3, 0, 0]) : ctx.rect(x, y, barW, bh);
+    ctx.fill();
+    // Valor em cima
+    ctx.fillStyle = "#1a4a4a";
+    ctx.font = "bold 6px Arial";
+    ctx.textAlign = "center";
+    if (v > 0) ctx.fillText(v >= 1000 ? (v/1000).toFixed(1)+"k" : v.toString(), x + barW/2, y - 3);
+    // Label embaixo
+    ctx.fillStyle = "#5a7a7a";
+    ctx.font = "6px Arial";
+    const lbl = labels[i].length > 12 ? labels[i].slice(0,11)+"…" : labels[i];
+    ctx.fillText(lbl, x + barW/2, pad.top + ch + 12);
+  });
+
+  // Eixo X
+  ctx.strokeStyle = "#c8dcdc";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top + ch);
+  ctx.lineTo(pad.left + cw, pad.top + ch);
+  ctx.stroke();
+
+  return canvas.toDataURL("image/png");
+}
+
+function gerarGraficoPizza(labels, values, colors, titulo, w, h) {
+  const canvas = document.createElement("canvas");
+  canvas.width = w * 2; canvas.height = h * 2;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(2, 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = "#1a4a4a";
+  ctx.font = "bold 9px Arial";
+  ctx.textAlign = "left";
+  ctx.fillText(titulo, 12, 18);
+
+  const total = values.reduce((a, b) => a + b, 0);
+  if (total === 0) return canvas.toDataURL("image/png");
+
+  const cx = w * 0.38, cy = h * 0.54, r = Math.min(w, h) * 0.33;
+  let startAngle = -Math.PI / 2;
+
+  values.forEach((v, i) => {
+    const slice = (v / total) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, startAngle + slice);
+    ctx.closePath();
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    startAngle += slice;
+  });
+
+  // Buraco central (donut)
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.45, 0, 2 * Math.PI);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+
+  // % total no centro
+  ctx.fillStyle = "#1a4a4a";
+  ctx.font = "bold 8px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("Total", cx, cy - 3);
+  ctx.font = "6px Arial";
+  ctx.fillStyle = "#5a7a7a";
+  ctx.fillText(total >= 1000 ? "R$"+(total/1000).toFixed(0)+"k" : total.toString(), cx, cy + 7);
+
+  // Legenda lateral
+  const lx = w * 0.72, ly0 = h * 0.22;
+  labels.forEach((lbl, i) => {
+    const ly = ly0 + i * 16;
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fillRect(lx, ly - 5, 9, 9);
+    ctx.fillStyle = "#1a4a4a";
+    ctx.font = "6.5px Arial";
+    ctx.textAlign = "left";
+    const pct = total > 0 ? ((values[i] / total) * 100).toFixed(1) : "0";
+    const lblShort = lbl.length > 14 ? lbl.slice(0, 13) + "…" : lbl;
+    ctx.fillText(`${lblShort}`, lx + 12, ly + 2);
+    ctx.fillStyle = "#E8450A";
+    ctx.font = "bold 6px Arial";
+    ctx.fillText(`${pct}%`, lx + 12, ly + 10);
+  });
+
+  return canvas.toDataURL("image/png");
+}
+
 function exportarPDF(filtradas, empresas, periodo) {
   try {
     const { jsPDF } = window.jspdf;
     if (!jsPDF) { alert("Biblioteca PDF não carregada. Recarregue a página."); return; }
-    
-    const nomeEmp = (id) => { const e = empresas.find(x => x.id === id); return e ? e.nome : id; };
-    const fmtMoeda = (v) => `R$ ${Number(v||0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-    
+
+    const num = (v) => Number(v || 0);
+    const fmtM = (v) => `R$ ${num(v).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+    const nomeEmp = (id) => { const e = empresas.find(x => x.id === id); return e ? e.nome.split(" - ").pop() : id; };
     const hoje = new Date().toLocaleDateString("pt-BR");
-    
-    // Cabeçalho
-    doc.setFillColor(232, 69, 10);
-    doc.rect(0, 0, 297, 18, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(14);
+    const hojeFile = hoje.replace(/\//g, "-");
+
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const PW = 210, PH = 297;
+    const PETROL = [26, 74, 74];
+    const LARANJA = [232, 69, 10];
+    const TEAL = [77, 184, 184];
+    const CINZA = [240, 246, 246];
+
+    // ---- HELPERS ----
+    const header = (pg) => {
+      // Faixa topo petróleo
+      doc.setFillColor(...PETROL);
+      doc.rect(0, 0, PW, 16, "F");
+      // Linha laranja embaixo do header
+      doc.setFillColor(...LARANJA);
+      doc.rect(0, 16, PW, 2, "F");
+      // Texto header
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text("ENERWATT  Gestão DTE/AM", 10, 10.5);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text(`Relatório ${periodo.toUpperCase()} — ${hoje}`, PW - 10, 10.5, { align: "right" });
+      // Rodapé
+      doc.setFillColor(240, 246, 246);
+      doc.rect(0, PH - 10, PW, 10, "F");
+      doc.setTextColor(130, 160, 160);
+      doc.setFontSize(6.5);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Enerwatt Engenharia — Sistema DTE/AM — ${hoje} — Pág ${pg}`, PW / 2, PH - 4, { align: "center" });
+    };
+
+    // =============================================
+    // PÁGINA 1 — CAPA + KPIs + GRÁFICO DE PRAZOS
+    // =============================================
+    header(1);
+
+    // Título da página
+    doc.setFillColor(...CINZA);
+    doc.rect(0, 20, PW, 14, "F");
+    doc.setTextColor(...PETROL);
     doc.setFont("helvetica", "bold");
-    doc.text("ENERWATT — Gestão DTE/AM", 10, 12);
-    doc.setFontSize(10);
-    doc.text(`Relatório ${periodo.toUpperCase()} — ${hoje}`, 200, 12);
-    
-    // Resumo
-    doc.setTextColor(50, 50, 50);
-    doc.setFontSize(10);
+    doc.setFontSize(13);
+    doc.text("Indicadores de Gestão DTE/AM", 10, 30);
     doc.setFont("helvetica", "normal");
-    doc.text(`Total de notas: ${filtradas.length}`, 10, 26);
-    const totalCustos = filtradas.reduce((s,n) => s + Number(n.taxaReanalise||0) + Number(n.taxaDesembaraco||0) + Number(n.icmsAntecipado||0) + Number(n.multa||0) + Number(n.juros||0), 0);
-    doc.text(`Total custos registrados: ${fmtMoeda(totalCustos)}`, 80, 26);
-    doc.text(`Críticas (60+ dias): ${filtradas.filter(n => n.qtdeDias >= 60).length}`, 200, 26);
-    
-    // Tabela
-    const colunas = ["Empresa", "Razão Social", "Nº Nota", "Emissão", "Dias", "Valor", "Status", "Total Custos"];
-    const linhas = filtradas.map(n => [
-      nomeEmp(n.empresa).slice(0,18),
-      (n.razaoSocial||"").slice(0,25),
-      n.numNota||"",
-      n.dtEmissao||"",
-      String(n.qtdeDias||0),
-      fmtMoeda(n.valor),
-      n.status||"",
-      fmtMoeda(Number(n.taxaReanalise||0)+Number(n.taxaDesembaraco||0)+Number(n.icmsAntecipado||0)+Number(n.multa||0)+Number(n.juros||0))
-    ]);
-    
-    // Cabeçalho da tabela
-    let y = 35;
-    const cols = [10, 55, 110, 133, 152, 165, 195, 235];
-    const colW = [44, 54, 22, 18, 12, 29, 39, 35];
-    
-    doc.setFillColor(245, 245, 245);
-    doc.rect(8, y-5, 281, 8, "F");
-    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    colunas.forEach((c, i) => doc.text(c, cols[i], y));
-    y += 6;
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    linhas.forEach((linha, idx) => {
-      if (y > 190) {
-        doc.addPage();
-        y = 15;
-        doc.setFillColor(245,245,245);
-        doc.rect(8, y-5, 281, 8, "F");
-        doc.setFont("helvetica","bold");
-        doc.setFontSize(8);
-        colunas.forEach((c,i) => doc.text(c, cols[i], y));
-        y += 6;
-        doc.setFont("helvetica","normal");
-        doc.setFontSize(7.5);
-      }
-      if (idx % 2 === 0) { doc.setFillColor(252,247,244); doc.rect(8, y-4, 281, 6, "F"); }
-      doc.setTextColor(50,50,50);
-      linha.forEach((cel, i) => doc.text(String(cel).slice(0, colW[i]*1.5), cols[i], y));
-      // Colorir status
-      if (linha[6] && linha[4] && parseInt(linha[4]) >= 60) doc.setTextColor(192,57,43);
-      y += 6;
-      doc.setTextColor(50,50,50);
-    });
-    
-    // Rodapé
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
+    doc.setTextColor(100, 140, 140);
+    doc.text("Departamento Fiscal — Análise de Notas Pendentes de Desembaraço", 10, 36);
+
+    // ---- CARDS KPI ----
+    const totalNotas = filtradas.length;
+    const notasAtivas = filtradas.filter(n => !["Desembaraçada","Recusada"].includes(n.status)).length;
+    const criticas = filtradas.filter(n => num(n.qtdeDias) >= 60).length;
+    const atencao = filtradas.filter(n => num(n.qtdeDias) >= 25 && num(n.qtdeDias) < 60).length;
+    const ok = filtradas.filter(n => num(n.qtdeDias) < 25).length;
+    const totalValorNF = filtradas.reduce((s,n) => s + num(n.valor), 0);
+    const totalTaxas = filtradas.reduce((s,n) => s + num(n.taxaReanalise) + num(n.taxaDesembaraco), 0);
+    const totalIcms = filtradas.reduce((s,n) => s + num(n.icmsAntecipado), 0);
+    const totalMultas = filtradas.reduce((s,n) => s + num(n.multa), 0);
+    const totalJuros = filtradas.reduce((s,n) => s + num(n.juros), 0);
+    const totalCustos = totalTaxas + totalIcms + totalMultas + totalJuros;
+
+    const kpis = [
+      { label: "Total Notas", valor: totalNotas.toString(), sub: "no período", cor: PETROL },
+      { label: "Notas Ativas", valor: notasAtivas.toString(), sub: "pendentes", cor: TEAL },
+      { label: "Críticas", valor: criticas.toString(), sub: "60+ dias", cor: [192, 57, 43] },
+      { label: "Total Custos", valor: fmtM(totalCustos), sub: "registrados", cor: LARANJA },
+    ];
+    const kpiW = 44, kpiH = 22, kpiY = 42, kpiX0 = 9;
+    kpis.forEach((k, i) => {
+      const x = kpiX0 + i * (kpiW + 4);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(x, kpiY, kpiW, kpiH, 2, 2, "F");
+      doc.setDrawColor(...k.cor);
+      doc.setLineWidth(0.6);
+      doc.roundedRect(x, kpiY, kpiW, kpiH, 2, 2, "S");
+      // Barra colorida esquerda
+      doc.setFillColor(...k.cor);
+      doc.roundedRect(x, kpiY, 2.5, kpiH, 1, 1, "F");
+      doc.setTextColor(...k.cor);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.text(k.valor.length > 10 ? k.valor : k.valor, x + 6, kpiY + 13);
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
-      doc.setTextColor(150,150,150);
-      doc.text(`Enerwatt Engenharia — Sistema DTE/AM — Gerado em ${hoje} — Página ${i}/${pageCount}`, 10, 205);
-    }
-    
-    const hoje2 = new Date().toLocaleDateString("pt-BR").replace(/\//g,"-");
-    doc.save(`DTE-Enerwatt-${periodo}-${hoje2}.pdf`);
+      doc.setTextColor(80, 100, 100);
+      doc.text(k.label, x + 6, kpiY + 19);
+    });
+
+    // ---- GRÁFICO 1: Notas por faixa de prazo (barras) ----
+    const faixasLabels = ["0-15d", "16-30d", "31-45d", "46-60d", "61-90d", "91-120d", "121-180d", "180+d"];
+    const faixasMins = [0, 16, 31, 46, 61, 91, 121, 181];
+    const faixasMaxs = [15, 30, 45, 60, 90, 120, 180, 9999];
+    const faixasVals = faixasMins.map((min, i) =>
+      filtradas.filter(n => num(n.qtdeDias) >= min && num(n.qtdeDias) <= faixasMaxs[i]).length
+    );
+    const coresFaixas = ["#4db8b8","#4db8b8","#f0a500","#f0a500","#E8450A","#E8450A","#c0392b","#7b0000"];
+    const g1 = gerarGraficoBarras(faixasLabels, faixasVals, coresFaixas, "Distribuição de Notas por Faixa de Prazo", 190, 90);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(9, 70, 192, 92, 2, 2, "F");
+    doc.addImage(g1, "PNG", 9, 70, 192, 92);
+
+    // ---- GRÁFICO 2: Composição dos custos (pizza) ----
+    const custoLabels = ["Taxas", "ICMS Antecipado", "Multas", "Juros"];
+    const custoVals = [totalTaxas, totalIcms, totalMultas, totalJuros];
+    const coresCustos = ["#1a4a4a", "#4db8b8", "#E8450A", "#f0a500"];
+    const g2 = gerarGraficoPizza(custoLabels, custoVals, coresCustos, "Composição dos Custos Registrados", 192, 80);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(9, 167, 192, 82, 2, 2, "F");
+    doc.addImage(g2, "PNG", 9, 167, 192, 82);
+
+    // Linha separadora entre gráficos
+    doc.setDrawColor(220, 232, 232);
+    doc.setLineWidth(0.3);
+    doc.line(9, 165, 201, 165);
+
+    // ---- RESUMO NUMÉRICO dos custos (abaixo da pizza) ----
+    const y0 = 253;
+    doc.setFillColor(...CINZA);
+    doc.roundedRect(9, y0, 192, 30, 2, 2, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...PETROL);
+    doc.text("RESUMO DE CUSTOS", 14, y0 + 7);
+    const custoCols = [
+      { label: "Taxas", val: fmtM(totalTaxas) },
+      { label: "ICMS Antecipado", val: fmtM(totalIcms) },
+      { label: "Multas", val: fmtM(totalMultas) },
+      { label: "Juros", val: fmtM(totalJuros) },
+      { label: "TOTAL", val: fmtM(totalCustos) },
+    ];
+    custoCols.forEach((c, i) => {
+      const x = 14 + i * 38;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(6.5); doc.setTextColor(90, 120, 120);
+      doc.text(c.label, x, y0 + 16);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(i === 4 ? 232 : 26, i === 4 ? 69 : 74, i === 4 ? 10 : 74);
+      doc.setFontSize(7.5);
+      doc.text(c.val, x, y0 + 24);
+    });
+
+    // =============================================
+    // PÁGINA 2 — GRÁFICO POR EMPRESA + RANKING FORNECEDORES
+    // =============================================
+    doc.addPage();
+    header(2);
+
+    // ---- GRÁFICO 3: Notas por empresa (barras) ----
+    const empMap = {};
+    filtradas.forEach(n => {
+      const nm = nomeEmp(n.empresa);
+      if (!empMap[nm]) empMap[nm] = { qtde: 0, criticas: 0, custos: 0 };
+      empMap[nm].qtde++;
+      if (num(n.qtdeDias) >= 60) empMap[nm].criticas++;
+      empMap[nm].custos += num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros);
+    });
+    const empNomes = Object.keys(empMap);
+    const empQtdes = empNomes.map(e => empMap[e].qtde);
+    const empCriticas = empNomes.map(e => empMap[e].criticas);
+    const g3a = gerarGraficoBarras(empNomes, empQtdes, ["#1a4a4a","#4db8b8","#E8450A"], "Notas por Empresa — Quantidade Total", 192, 70);
+    const g3b = gerarGraficoBarras(empNomes, empCriticas, ["#c0392b","#E8450A","#f0a500"], "Notas Críticas (60+ dias) por Empresa", 192, 70);
+
+    doc.setFillColor(255,255,255); doc.roundedRect(9, 20, 192, 72, 2, 2, "F");
+    doc.addImage(g3a, "PNG", 9, 20, 192, 72);
+    doc.setFillColor(255,255,255); doc.roundedRect(9, 96, 192, 72, 2, 2, "F");
+    doc.addImage(g3b, "PNG", 9, 96, 192, 72);
+
+    // ---- RANKING DE FORNECEDORES ----
+    const fornMap = {};
+    filtradas.forEach(n => {
+      const k = n.razaoSocial || n.fornecedor || "Desconhecido";
+      if (!fornMap[k]) fornMap[k] = { qtde:0, custos:0, diasMax:0 };
+      fornMap[k].qtde++;
+      fornMap[k].custos += num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros);
+      if (num(n.qtdeDias) > fornMap[k].diasMax) fornMap[k].diasMax = num(n.qtdeDias);
+    });
+    const ranking = Object.entries(fornMap).sort((a,b) => b[1].custos - a[1].custos).slice(0, 10);
+
+    let ry = 174;
+    doc.setFillColor(...CINZA);
+    doc.rect(0, ry - 4, PW, 12, "F");
+    doc.setFillColor(...LARANJA);
+    doc.rect(0, ry - 4, 2.5, 12, "F");
+    doc.setTextColor(...PETROL); doc.setFont("helvetica","bold"); doc.setFontSize(9);
+    doc.text("Top 10 Fornecedores por Custo Acumulado", 10, ry + 4);
+    ry += 12;
+
+    // Cabeçalho tabela
+    const tcols = [10, 85, 108, 130, 155, 180];
+    const thead = ["Fornecedor / Razão Social","Qtde","Maior Prazo","Custo Acum.","Risco"];
+    doc.setFillColor(...PETROL);
+    doc.rect(9, ry - 4, 192, 8, "F");
+    doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(7);
+    thead.forEach((h,i) => doc.text(h, tcols[i+1], ry + 1));
+    doc.text("#", tcols[0], ry + 1);
+    ry += 8;
+
+    ranking.forEach(([nome, d], i) => {
+      if (i % 2 === 0) { doc.setFillColor(240,248,248); doc.rect(9, ry-4, 192, 7, "F"); }
+      const risco = d.diasMax >= 60 ? "ALTO" : d.diasMax >= 25 ? "MÉDIO" : "BAIXO";
+      const riscoColor = d.diasMax >= 60 ? [192,57,43] : d.diasMax >= 25 ? [200,120,0] : [26,120,80];
+      doc.setTextColor(50, 70, 70); doc.setFont("helvetica","normal"); doc.setFontSize(7);
+      doc.text(String(i+1), tcols[0], ry);
+      doc.text(nome.slice(0,36), tcols[1], ry);
+      doc.text(String(d.qtde), tcols[2], ry);
+      doc.text(`${d.diasMax}d`, tcols[3], ry);
+      doc.text(fmtM(d.custos), tcols[4], ry);
+      doc.setTextColor(...riscoColor); doc.setFont("helvetica","bold");
+      doc.text(risco, tcols[5], ry);
+      ry += 8;
+    });
+
+    // =============================================
+    // PÁGINA 3 — LISTAGEM COMPLETA
+    // =============================================
+    doc.addPage();
+    header(3);
+
+    let ly = 24;
+    doc.setFillColor(...CINZA);
+    doc.rect(0, ly - 2, PW, 10, "F");
+    doc.setFillColor(...LARANJA); doc.rect(0, ly - 2, 2.5, 10, "F");
+    doc.setTextColor(...PETROL); doc.setFont("helvetica","bold"); doc.setFontSize(9);
+    doc.text("Listagem Completa de Notas", 10, ly + 5);
+    ly += 14;
+
+    const tcols2 = [10, 68, 90, 106, 122, 134, 162, 184];
+    const theads2 = ["Razão Social","Nº Nota","CFOP","Emissão","Dias","Status","Custo Total"];
+    doc.setFillColor(...PETROL);
+    doc.rect(9, ly - 4, 192, 8, "F");
+    doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
+    doc.text("Empresa", tcols2[0], ly);
+    theads2.forEach((h,i) => doc.text(h, tcols2[i+1], ly));
+    ly += 8;
+
+    filtradas.forEach((n, i) => {
+      if (ly > PH - 16) {
+        doc.addPage();
+        header(doc.internal.getNumberOfPages());
+        ly = 24;
+        doc.setFillColor(...PETROL);
+        doc.rect(9, ly - 4, 192, 8, "F");
+        doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
+        doc.text("Empresa", tcols2[0], ly);
+        theads2.forEach((h,ii) => doc.text(h, tcols2[ii+1], ly));
+        ly += 8;
+      }
+      if (i % 2 === 0) { doc.setFillColor(242,248,248); doc.rect(9, ly - 4, 192, 7, "F"); }
+      const custo = num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros);
+      const isCrit = num(n.qtdeDias) >= 60;
+      doc.setFont("helvetica","normal"); doc.setFontSize(6.5);
+      doc.setTextColor(50,70,70);
+      doc.text(nomeEmp(n.empresa).slice(0,20), tcols2[0], ly);
+      doc.text((n.razaoSocial||"").slice(0,28), tcols2[1], ly);
+      doc.text(n.numNota||"", tcols2[2], ly);
+      doc.text(n.cfop||"", tcols2[3], ly);
+      doc.text(n.dtEmissao||"", tcols2[4], ly);
+      doc.setTextColor(...(isCrit ? [192,57,43] : [50,70,70]));
+      doc.setFont("helvetica", isCrit ? "bold" : "normal");
+      doc.text(`${n.qtdeDias||0}d`, tcols2[5], ly);
+      doc.setFont("helvetica","normal"); doc.setTextColor(50,70,70);
+      doc.text((n.status||"").slice(0,22), tcols2[6], ly);
+      doc.setTextColor(custo > 0 ? 232 : 50, custo > 0 ? 69 : 70, custo > 0 ? 10 : 70);
+      doc.setFont("helvetica", custo > 0 ? "bold" : "normal");
+      doc.text(fmtM(custo), tcols2[7], ly);
+      ly += 7;
+    });
+
+    doc.save(`DTE-Enerwatt-${periodo}-${hojeFile}.pdf`);
   } catch(e) {
     alert("Erro ao gerar PDF: " + e.message);
+    console.error(e);
   }
 }
 
