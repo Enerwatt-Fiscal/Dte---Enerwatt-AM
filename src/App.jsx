@@ -6,47 +6,156 @@ function exportarExcel(filtradas, empresas, periodo) {
   try {
     const XLSX = window.XLSX;
     if (!XLSX) { alert("Biblioteca Excel não carregada. Recarregue a página."); return; }
-    
-    const fmtMoeda = (v) => v ? `R$ ${Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "R$ 0,00";
     const nomeEmp = (id) => { const e = empresas.find(x => x.id === id); return e ? e.nome : id; };
-    
-    const dados = filtradas.map(n => ({
-      "Empresa": nomeEmp(n.empresa),
-      "Fornecedor": n.fornecedor,
-      "Razão Social": n.razaoSocial,
-      "Nº Nota": n.numNota,
-      "CFOP": n.cfop,
-      "Dt. Emissão": n.dtEmissao,
-      "Dt. Apresentação": n.dtApresentacao,
-      "Chave NF-e": n.chave,
-      "Valor": Number(n.valor),
-      "Dias": n.qtdeDias,
-      "Status": n.status,
-      "Finalidade": n.finalidade,
-      "Centro de Custo": n.centroCusto,
-      "Responsável": n.responsavel,
-      "No RM": n.noRM === true ? "Sim" : n.noRM === false ? "Não" : "-",
-      "Taxa Reanálise": Number(n.taxaReanalise),
-      "Taxa Desembaraço": Number(n.taxaDesembaraco),
-      "ICMS Antecipado": Number(n.icmsAntecipado),
-      "Multa": Number(n.multa),
-      "Juros": Number(n.juros),
-      "Total Custos": Number(n.taxaReanalise||0) + Number(n.taxaDesembaraco||0) + Number(n.icmsAntecipado||0) + Number(n.multa||0) + Number(n.juros||0),
-      "Obs": n.obs,
-      "Dt. Importação": n.dtImportacao,
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(dados);
+    const num = (v) => Number(v||0);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Notas DTE");
-    
-    // Largura das colunas
-    ws["!cols"] = [
-      {wch:20},{wch:20},{wch:30},{wch:12},{wch:8},{wch:12},{wch:14},
-      {wch:48},{wch:14},{wch:8},{wch:20},{wch:18},{wch:18},{wch:20},
-      {wch:8},{wch:16},{wch:18},{wch:18},{wch:12},{wch:12},{wch:14},{wch:30},{wch:14}
+
+    // ---- ABA 1: DADOS COMPLETOS ----
+    const dadosCompletos = filtradas.map(n => ({
+      "Empresa": nomeEmp(n.empresa),
+      "Fornecedor": n.fornecedor || "",
+      "Razão Social": n.razaoSocial || "",
+      "Nº Nota": n.numNota || "",
+      "CFOP": n.cfop || "",
+      "Chave NF-e": n.chave || "",
+      "Dt. Emissão": n.dtEmissao || "",
+      "Dt. Apresentação": n.dtApresentacao || "",
+      "Dt. Importação": n.dtImportacao || "",
+      "Valor NF (R$)": num(n.valor),
+      "Qtde Dias": num(n.qtdeDias),
+      "Faixa de Prazo": num(n.qtdeDias) >= 60 ? "Crítico (60+d)" : num(n.qtdeDias) >= 25 ? "Atenção (25-59d)" : "OK (0-24d)",
+      "Status": n.status || "",
+      "Finalidade": n.finalidade || "",
+      "Centro de Custo": n.centroCusto || "",
+      "Responsável": n.responsavel || "",
+      "No RM": n.noRM === true ? "Sim" : n.noRM === false ? "Não" : "-",
+      "Taxa Reanálise (R$)": num(n.taxaReanalise),
+      "Taxa Desembaraço (R$)": num(n.taxaDesembaraco),
+      "ICMS Antecipado (R$)": num(n.icmsAntecipado),
+      "Multa (R$)": num(n.multa),
+      "Juros (R$)": num(n.juros),
+      "Total Custos (R$)": num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros),
+      "Observações": n.obs || "",
+    }));
+    const ws1 = XLSX.utils.json_to_sheet(dadosCompletos);
+    ws1["!cols"] = [{wch:22},{wch:18},{wch:30},{wch:12},{wch:8},{wch:46},{wch:13},{wch:16},{wch:14},{wch:14},{wch:10},{wch:16},{wch:22},{wch:16},{wch:18},{wch:16},{wch:20},{wch:8},{wch:18},{wch:20},{wch:20},{wch:14},{wch:12},{wch:16},{wch:30}];
+    XLSX.utils.book_append_sheet(wb, ws1, "Dados Completos");
+
+    // ---- ABA 2: RESUMO POR EMPRESA ----
+    const empMap = {};
+    filtradas.forEach(n => {
+      const emp = nomeEmp(n.empresa);
+      if (!empMap[emp]) empMap[emp] = { total:0, ativas:0, criticas:0, atencao:0, ok:0, valorTotal:0, custoTotal:0, taxas:0, icms:0, multas:0, juros:0 };
+      empMap[emp].total++;
+      if (n.status !== "Desembaraçada" && n.status !== "Recusada") empMap[emp].ativas++;
+      if (num(n.qtdeDias) >= 60) empMap[emp].criticas++;
+      else if (num(n.qtdeDias) >= 25) empMap[emp].atencao++;
+      else empMap[emp].ok++;
+      empMap[emp].valorTotal += num(n.valor);
+      const custo = num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros);
+      empMap[emp].custoTotal += custo;
+      empMap[emp].taxas += num(n.taxaReanalise)+num(n.taxaDesembaraco);
+      empMap[emp].icms += num(n.icmsAntecipado);
+      empMap[emp].multas += num(n.multa);
+      empMap[emp].juros += num(n.juros);
+    });
+    const resumoEmp = Object.entries(empMap).map(([emp, d]) => ({
+      "Empresa": emp,
+      "Total Notas": d.total,
+      "Notas Ativas": d.ativas,
+      "Críticas (60+d)": d.criticas,
+      "Atenção (25-59d)": d.atencao,
+      "OK (0-24d)": d.ok,
+      "% Críticas": d.total > 0 ? ((d.criticas/d.total)*100).toFixed(1)+"%" : "0%",
+      "Valor Total NF (R$)": d.valorTotal,
+      "Taxas (R$)": d.taxas,
+      "ICMS Antecipado (R$)": d.icms,
+      "Multas (R$)": d.multas,
+      "Juros (R$)": d.juros,
+      "Custo Total (R$)": d.custoTotal,
+    }));
+    const ws2 = XLSX.utils.json_to_sheet(resumoEmp);
+    ws2["!cols"] = [{wch:24},{wch:13},{wch:13},{wch:14},{wch:16},{wch:12},{wch:12},{wch:18},{wch:14},{wch:20},{wch:14},{wch:12},{wch:16}];
+    XLSX.utils.book_append_sheet(wb, ws2, "Resumo por Empresa");
+
+    // ---- ABA 3: ANÁLISE DE PRAZOS ----
+    const faixas = [
+      { label: "0-15 dias", min:0, max:15 },
+      { label: "16-30 dias", min:16, max:30 },
+      { label: "31-45 dias", min:31, max:45 },
+      { label: "46-60 dias", min:46, max:60 },
+      { label: "61-90 dias", min:61, max:90 },
+      { label: "91-120 dias", min:91, max:120 },
+      { label: "121-180 dias", min:121, max:180 },
+      { label: "180+ dias", min:181, max:99999 },
     ];
-    
+    const analisePrazos = faixas.map(f => {
+      const notas = filtradas.filter(n => num(n.qtdeDias) >= f.min && num(n.qtdeDias) <= f.max);
+      const custos = notas.reduce((s,n) => s+num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros), 0);
+      return {
+        "Faixa de Prazo": f.label,
+        "Qtde Notas": notas.length,
+        "% do Total": filtradas.length > 0 ? ((notas.length/filtradas.length)*100).toFixed(1)+"%" : "0%",
+        "Valor Total NF (R$)": notas.reduce((s,n) => s+num(n.valor), 0),
+        "Custo Acumulado (R$)": custos,
+        "Risco": f.min >= 60 ? "ALTO" : f.min >= 25 ? "MÉDIO" : "BAIXO",
+      };
+    });
+    const ws3 = XLSX.utils.json_to_sheet(analisePrazos);
+    ws3["!cols"] = [{wch:16},{wch:12},{wch:12},{wch:18},{wch:20},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws3, "Análise de Prazos");
+
+    // ---- ABA 4: CUSTOS DETALHADOS ----
+    const totalNotas = filtradas.length;
+    const totalValor = filtradas.reduce((s,n) => s+num(n.valor), 0);
+    const totalTaxas = filtradas.reduce((s,n) => s+num(n.taxaReanalise)+num(n.taxaDesembaraco), 0);
+    const totalIcms = filtradas.reduce((s,n) => s+num(n.icmsAntecipado), 0);
+    const totalMultas = filtradas.reduce((s,n) => s+num(n.multa), 0);
+    const totalJuros = filtradas.reduce((s,n) => s+num(n.juros), 0);
+    const totalCustos = totalTaxas+totalIcms+totalMultas+totalJuros;
+    const custosDetalhados = [
+      { "Categoria": "Taxas (Reanálise + Desembaraço)", "Valor (R$)": totalTaxas, "% do Custo Total": totalCustos > 0 ? ((totalTaxas/totalCustos)*100).toFixed(1)+"%" : "0%", "Descrição": "Taxas cobradas pela SEFAZ/AM" },
+      { "Categoria": "ICMS Antecipado", "Valor (R$)": totalIcms, "% do Custo Total": totalCustos > 0 ? ((totalIcms/totalCustos)*100).toFixed(1)+"%" : "0%", "Descrição": "Recolhimento antecipado para notas abaixo de R$25k" },
+      { "Categoria": "Multas", "Valor (R$)": totalMultas, "% do Custo Total": totalCustos > 0 ? ((totalMultas/totalCustos)*100).toFixed(1)+"%" : "0%", "Descrição": "Multa 10% para notas acima de R$25k e multa por dia após 60 dias" },
+      { "Categoria": "Juros", "Valor (R$)": totalJuros, "% do Custo Total": totalCustos > 0 ? ((totalJuros/totalCustos)*100).toFixed(1)+"%" : "0%", "Descrição": "Juros acumulados por atraso" },
+      { "Categoria": "TOTAL CUSTOS", "Valor (R$)": totalCustos, "% do Custo Total": "100%", "Descrição": "" },
+      { "Categoria": "", "Valor (R$)": "", "% do Custo Total": "", "Descrição": "" },
+      { "Categoria": "INDICADORES GERAIS", "Valor (R$)": "", "% do Custo Total": "", "Descrição": "" },
+      { "Categoria": "Total de notas no período", "Valor (R$)": totalNotas, "% do Custo Total": "", "Descrição": "" },
+      { "Categoria": "Valor total das NF-e", "Valor (R$)": totalValor, "% do Custo Total": "", "Descrição": "" },
+      { "Categoria": "Custo médio por nota", "Valor (R$)": totalNotas > 0 ? (totalCustos/totalNotas).toFixed(2) : 0, "% do Custo Total": "", "Descrição": "" },
+      { "Categoria": "Notas críticas (60+d)", "Valor (R$)": filtradas.filter(n => num(n.qtdeDias) >= 60).length, "% do Custo Total": "", "Descrição": "Risco alto de multa adicional" },
+      { "Categoria": "Notas acima R$25k", "Valor (R$)": filtradas.filter(n => num(n.valor) >= 25000).length, "% do Custo Total": "", "Descrição": "Requerem e-mail à SEFAZ + multa 10%" },
+    ];
+    const ws4 = XLSX.utils.json_to_sheet(custosDetalhados);
+    ws4["!cols"] = [{wch:36},{wch:16},{wch:18},{wch:50}];
+    XLSX.utils.book_append_sheet(wb, ws4, "Custos Detalhados");
+
+    // ---- ABA 5: RANKING FORNECEDORES ----
+    const fornMap = {};
+    filtradas.forEach(n => {
+      const k = n.razaoSocial || n.fornecedor || "Desconhecido";
+      if (!fornMap[k]) fornMap[k] = { qtde:0, valor:0, custos:0, diasMax:0 };
+      fornMap[k].qtde++;
+      fornMap[k].valor += num(n.valor);
+      fornMap[k].custos += num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros);
+      if (num(n.qtdeDias) > fornMap[k].diasMax) fornMap[k].diasMax = num(n.qtdeDias);
+    });
+    const rankingForn = Object.entries(fornMap)
+      .sort((a,b) => b[1].custos - a[1].custos)
+      .map(([nome, d], i) => ({
+        "Ranking": i+1,
+        "Fornecedor / Razão Social": nome,
+        "Qtde Notas": d.qtde,
+        "Valor Total NF (R$)": d.valor,
+        "Custo Acumulado (R$)": d.custos,
+        "Maior Prazo (dias)": d.diasMax,
+        "Risco": d.diasMax >= 60 ? "ALTO" : d.diasMax >= 25 ? "MÉDIO" : "BAIXO",
+      }));
+    const ws5 = XLSX.utils.json_to_sheet(rankingForn);
+    ws5["!cols"] = [{wch:10},{wch:40},{wch:12},{wch:18},{wch:20},{wch:18},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws5, "Ranking Fornecedores");
+
     const hoje = new Date().toLocaleDateString("pt-BR").replace(/\//g,"-");
     XLSX.writeFile(wb, `DTE-Enerwatt-${periodo}-${hoje}.xlsx`);
   } catch(e) {
@@ -223,7 +332,7 @@ const NOTAS_INICIAIS = [
 // ============================================================
 // TELA DE LOGIN
 // ============================================================
-function TelaLogin({ onLogin }) {
+function TelaLogin({ onLogin, logoUrl }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
@@ -246,11 +355,18 @@ function TelaLogin({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "#fff4ee", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(160deg, #2a3328 0%, #3d4e38 35%, #4a5e42 65%, #5a6e50 100%)", fontFamily: "'Segoe UI', system-ui, sans-serif", position: "relative", overflow: "hidden" }}>
+      {/* Torres de transmissão no fundo */}
+      <TorresSVG opacity={0.22} corTorre="#1a2a18" />
+      {/* Overlay suave */}
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 100%, rgba(90,110,80,0.3) 0%, transparent 70%)" }} />
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" style={{ position: "relative", zIndex: 10 }}>
         {/* Header laranja */}
         <div className="p-8 text-center" style={{ background: "#E8450A" }}>
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-white text-2xl mx-auto mb-3" style={{ background: "rgba(255,255,255,0.2)" }}>E</div>
+          {logoUrl
+            ? <img src={logoUrl} alt="Logo" className="h-16 object-contain mx-auto mb-3" style={{ filter: "brightness(0) invert(1)" }} />
+            : <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-white text-2xl mx-auto mb-3" style={{ background: "rgba(255,255,255,0.2)" }}>E</div>
+          }
           <p className="font-black text-white text-xl">Enerwatt</p>
           <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.8)" }}>Gestão DTE/AM</p>
         </div>
@@ -732,7 +848,7 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
 // ============================================================
 // TELA: PAINEL DE NOTAS
 // ============================================================
-function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
+function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas }) {
   const [filtros, setFiltros] = useState({
     empresa: "", status: "", busca: "", dias: "",
     tipoData: "emissao", dtDe: "", dtAte: ""
@@ -795,10 +911,16 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
             {ultimaImportacao && <span className="ml-2 font-medium text-gray-600">Última importação: {ultimaImportacao}</span>}
           </p>
         </div>
-        <label className="px-5 py-2.5 rounded-xl text-sm font-bold text-white cursor-pointer whitespace-nowrap ml-4 hover:opacity-90 transition-opacity" style={{ background: "#E8450A" }}>
-          ⬆ Selecionar Arquivo
-          <input type="file" accept=".csv,.xlsx" className="hidden" onChange={handleFile} />
-        </label>
+        <div className="flex items-center gap-2 ml-4">
+          <button onClick={() => exportarExcel(filtradas, empresas || EMPRESAS, "painel")}
+            className="px-4 py-2.5 rounded-xl text-sm font-bold border whitespace-nowrap" style={{ borderColor: "#E8450A", color: "#E8450A", background: "white" }}>
+            📊 Exportar Excel
+          </button>
+          <label className="px-5 py-2.5 rounded-xl text-sm font-bold text-white cursor-pointer whitespace-nowrap hover:opacity-90 transition-opacity" style={{ background: "#E8450A" }}>
+            ⬆ Selecionar Arquivo
+            <input type="file" accept=".csv,.xlsx" className="hidden" onChange={handleFile} />
+          </label>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -906,9 +1028,11 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
                     <span className="truncate block" title={getProximoPasso(n)}>{getProximoPasso(n)}</span>
                   </td>
                   <td className="px-3 py-3">
-                    <button onClick={() => onVerNota(n)} className="px-3 py-1 rounded-lg text-xs font-semibold text-white whitespace-nowrap" style={{ background: "#E8450A" }}>
-                      Abrir
-                    </button>
+                    <div className="flex gap-1">
+                      <button onClick={() => onVerNota(n)} className="px-3 py-1 rounded-lg text-xs font-semibold text-white whitespace-nowrap" style={{ background: "#E8450A" }}>
+                        ✏️ Editar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -929,74 +1053,156 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao }) {
 // ============================================================
 // SVG TORRES DE TRANSMISSÃO (background decorativo)
 // ============================================================
-function TorresSVG() {
+function TorresSVG({ opacity = 0.07, corTorre = "#E8450A" }) {
   return (
-    <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "100%", opacity: 0.07 }} preserveAspectRatio="xMidYMax meet">
-      {/* Torre 1 */}
-      <g transform="translate(60,20)">
-        <line x1="40" y1="0" x2="20" y2="280" stroke="#E8450A" strokeWidth="3"/>
-        <line x1="40" y1="0" x2="60" y2="280" stroke="#E8450A" strokeWidth="3"/>
-        <line x1="20" y1="280" x2="60" y2="280" stroke="#E8450A" strokeWidth="3"/>
-        <line x1="10" y1="80" x2="70" y2="80" stroke="#E8450A" strokeWidth="2"/>
-        <line x1="15" y1="140" x2="65" y2="140" stroke="#E8450A" strokeWidth="2"/>
-        <line x1="18" y1="200" x2="62" y2="200" stroke="#E8450A" strokeWidth="2"/>
-        <line x1="5" y1="80" x2="20" y2="280" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="75" y1="80" x2="60" y2="280" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="10" y1="80" x2="25" y2="140" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="70" y1="80" x2="55" y2="140" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="15" y1="140" x2="28" y2="200" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="65" y1="140" x2="52" y2="200" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="0" y1="60" x2="80" y2="60" stroke="#E8450A" strokeWidth="2.5"/>
-        <line x1="-5" y1="30" x2="85" y2="30" stroke="#E8450A" strokeWidth="2.5"/>
+    <svg viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg"
+      style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "100%", opacity }}
+      preserveAspectRatio="xMidYMax meet">
+      <defs>
+        <linearGradient id="torreGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={corTorre} stopOpacity="1"/>
+          <stop offset="100%" stopColor={corTorre} stopOpacity="0.6"/>
+        </linearGradient>
+      </defs>
+
+      {/* TORRE 1 — esquerda pequena */}
+      <g transform="translate(30,80)">
+        <line x1="35" y1="0" x2="18" y2="320" stroke="url(#torreGrad)" strokeWidth="2.5"/>
+        <line x1="35" y1="0" x2="52" y2="320" stroke="url(#torreGrad)" strokeWidth="2.5"/>
+        <line x1="18" y1="320" x2="52" y2="320" stroke={corTorre} strokeWidth="2.5"/>
+        {/* diagonais internas */}
+        <line x1="18" y1="320" x2="35" y2="200" stroke={corTorre} strokeWidth="1.2"/>
+        <line x1="52" y1="320" x2="35" y2="200" stroke={corTorre} strokeWidth="1.2"/>
+        <line x1="18" y1="200" x2="35" y2="120" stroke={corTorre} strokeWidth="1.2"/>
+        <line x1="52" y1="200" x2="35" y2="120" stroke={corTorre} strokeWidth="1.2"/>
+        <line x1="22" y1="120" x2="35" y2="60" stroke={corTorre} strokeWidth="1.2"/>
+        <line x1="48" y1="120" x2="35" y2="60" stroke={corTorre} strokeWidth="1.2"/>
+        {/* travessas horizontais */}
+        <line x1="10" y1="200" x2="60" y2="200" stroke={corTorre} strokeWidth="1.8"/>
+        <line x1="12" y1="120" x2="58" y2="120" stroke={corTorre} strokeWidth="1.8"/>
+        <line x1="15" y1="60" x2="55" y2="60" stroke={corTorre} strokeWidth="2"/>
+        {/* braços do topo */}
+        <line x1="-15" y1="28" x2="85" y2="28" stroke={corTorre} strokeWidth="2.2"/>
+        <line x1="-8" y1="10" x2="78" y2="10" stroke={corTorre} strokeWidth="2.2"/>
+        <line x1="35" y1="0" x2="35" y2="10" stroke={corTorre} strokeWidth="2"/>
+        {/* isoladores */}
+        <circle cx="-15" cy="28" r="3" fill={corTorre}/>
+        <circle cx="85" cy="28" r="3" fill={corTorre}/>
+        <circle cx="-8" cy="10" r="3" fill={corTorre}/>
+        <circle cx="78" cy="10" r="3" fill={corTorre}/>
+        {/* base */}
+        <line x1="5" y1="310" x2="18" y2="320" stroke={corTorre} strokeWidth="2"/>
+        <line x1="65" y1="310" x2="52" y2="320" stroke={corTorre} strokeWidth="2"/>
       </g>
-      {/* Torre 2 */}
-      <g transform="translate(280,60)">
-        <line x1="40" y1="0" x2="20" y2="240" stroke="#E8450A" strokeWidth="3"/>
-        <line x1="40" y1="0" x2="60" y2="240" stroke="#E8450A" strokeWidth="3"/>
-        <line x1="20" y1="240" x2="60" y2="240" stroke="#E8450A" strokeWidth="3"/>
-        <line x1="10" y1="70" x2="70" y2="70" stroke="#E8450A" strokeWidth="2"/>
-        <line x1="15" y1="130" x2="65" y2="130" stroke="#E8450A" strokeWidth="2"/>
-        <line x1="18" y1="185" x2="62" y2="185" stroke="#E8450A" strokeWidth="2"/>
-        <line x1="5" y1="70" x2="20" y2="240" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="75" y1="70" x2="60" y2="240" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="0" y1="50" x2="80" y2="50" stroke="#E8450A" strokeWidth="2.5"/>
-        <line x1="-5" y1="25" x2="85" y2="25" stroke="#E8450A" strokeWidth="2.5"/>
+
+      {/* TORRE 2 — média */}
+      <g transform="translate(280,40)">
+        <line x1="45" y1="0" x2="22" y2="360" stroke="url(#torreGrad)" strokeWidth="3"/>
+        <line x1="45" y1="0" x2="68" y2="360" stroke="url(#torreGrad)" strokeWidth="3"/>
+        <line x1="22" y1="360" x2="68" y2="360" stroke={corTorre} strokeWidth="3"/>
+        <line x1="22" y1="360" x2="45" y2="240" stroke={corTorre} strokeWidth="1.4"/>
+        <line x1="68" y1="360" x2="45" y2="240" stroke={corTorre} strokeWidth="1.4"/>
+        <line x1="22" y1="240" x2="45" y2="150" stroke={corTorre} strokeWidth="1.4"/>
+        <line x1="68" y1="240" x2="45" y2="150" stroke={corTorre} strokeWidth="1.4"/>
+        <line x1="26" y1="150" x2="45" y2="75" stroke={corTorre} strokeWidth="1.4"/>
+        <line x1="64" y1="150" x2="45" y2="75" stroke={corTorre} strokeWidth="1.4"/>
+        <line x1="8" y1="240" x2="82" y2="240" stroke={corTorre} strokeWidth="2"/>
+        <line x1="10" y1="150" x2="80" y2="150" stroke={corTorre} strokeWidth="2"/>
+        <line x1="13" y1="75" x2="77" y2="75" stroke={corTorre} strokeWidth="2.2"/>
+        <line x1="-20" y1="35" x2="110" y2="35" stroke={corTorre} strokeWidth="2.5"/>
+        <line x1="-12" y1="12" x2="102" y2="12" stroke={corTorre} strokeWidth="2.5"/>
+        <line x1="45" y1="0" x2="45" y2="12" stroke={corTorre} strokeWidth="2.5"/>
+        <circle cx="-20" cy="35" r="3.5" fill={corTorre}/>
+        <circle cx="110" cy="35" r="3.5" fill={corTorre}/>
+        <circle cx="-12" cy="12" r="3.5" fill={corTorre}/>
+        <circle cx="102" cy="12" r="3.5" fill={corTorre}/>
+        <line x1="5" y1="348" x2="22" y2="360" stroke={corTorre} strokeWidth="2"/>
+        <line x1="85" y1="348" x2="68" y2="360" stroke={corTorre} strokeWidth="2"/>
       </g>
-      {/* Torre 3 — maior, central */}
-      <g transform="translate(500,0)">
-        <line x1="50" y1="0" x2="22" y2="300" stroke="#E8450A" strokeWidth="3.5"/>
-        <line x1="50" y1="0" x2="78" y2="300" stroke="#E8450A" strokeWidth="3.5"/>
-        <line x1="22" y1="300" x2="78" y2="300" stroke="#E8450A" strokeWidth="3"/>
-        <line x1="8" y1="90" x2="92" y2="90" stroke="#E8450A" strokeWidth="2.5"/>
-        <line x1="12" y1="155" x2="88" y2="155" stroke="#E8450A" strokeWidth="2"/>
-        <line x1="16" y1="215" x2="84" y2="215" stroke="#E8450A" strokeWidth="2"/>
-        <line x1="2" y1="90" x2="22" y2="300" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="98" y1="90" x2="78" y2="300" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="8" y1="90" x2="28" y2="155" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="92" y1="90" x2="72" y2="155" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="0" y1="65" x2="100" y2="65" stroke="#E8450A" strokeWidth="3"/>
-        <line x1="-8" y1="35" x2="108" y2="35" stroke="#E8450A" strokeWidth="3"/>
+
+      {/* TORRE 3 — grande central */}
+      <g transform="translate(560,0)">
+        <line x1="55" y1="0" x2="25" y2="400" stroke="url(#torreGrad)" strokeWidth="3.5"/>
+        <line x1="55" y1="0" x2="85" y2="400" stroke="url(#torreGrad)" strokeWidth="3.5"/>
+        <line x1="25" y1="400" x2="85" y2="400" stroke={corTorre} strokeWidth="3.5"/>
+        <line x1="25" y1="400" x2="55" y2="280" stroke={corTorre} strokeWidth="1.6"/>
+        <line x1="85" y1="400" x2="55" y2="280" stroke={corTorre} strokeWidth="1.6"/>
+        <line x1="25" y1="280" x2="55" y2="180" stroke={corTorre} strokeWidth="1.6"/>
+        <line x1="85" y1="280" x2="55" y2="180" stroke={corTorre} strokeWidth="1.6"/>
+        <line x1="28" y1="180" x2="55" y2="100" stroke={corTorre} strokeWidth="1.6"/>
+        <line x1="82" y1="180" x2="55" y2="100" stroke={corTorre} strokeWidth="1.6"/>
+        <line x1="32" y1="100" x2="55" y2="45" stroke={corTorre} strokeWidth="1.6"/>
+        <line x1="78" y1="100" x2="55" y2="45" stroke={corTorre} strokeWidth="1.6"/>
+        <line x1="5" y1="280" x2="105" y2="280" stroke={corTorre} strokeWidth="2.2"/>
+        <line x1="8" y1="180" x2="102" y2="180" stroke={corTorre} strokeWidth="2.2"/>
+        <line x1="12" y1="100" x2="98" y2="100" stroke={corTorre} strokeWidth="2.2"/>
+        <line x1="16" y1="45" x2="94" y2="45" stroke={corTorre} strokeWidth="2.5"/>
+        <line x1="-30" y1="18" x2="140" y2="18" stroke={corTorre} strokeWidth="3"/>
+        <line x1="-18" y1="5" x2="128" y2="5" stroke={corTorre} strokeWidth="3"/>
+        <line x1="55" y1="0" x2="55" y2="5" stroke={corTorre} strokeWidth="3"/>
+        <circle cx="-30" cy="18" r="4.5" fill={corTorre}/>
+        <circle cx="140" cy="18" r="4.5" fill={corTorre}/>
+        <circle cx="-18" cy="5" r="4" fill={corTorre}/>
+        <circle cx="128" cy="5" r="4" fill={corTorre}/>
+        <line x1="5" y1="385" x2="25" y2="400" stroke={corTorre} strokeWidth="2.5"/>
+        <line x1="105" y1="385" x2="85" y2="400" stroke={corTorre} strokeWidth="2.5"/>
       </g>
-      {/* Torre 4 */}
-      <g transform="translate(730,40)">
-        <line x1="40" y1="0" x2="20" y2="260" stroke="#E8450A" strokeWidth="3"/>
-        <line x1="40" y1="0" x2="60" y2="260" stroke="#E8450A" strokeWidth="3"/>
-        <line x1="20" y1="260" x2="60" y2="260" stroke="#E8450A" strokeWidth="3"/>
-        <line x1="10" y1="75" x2="70" y2="75" stroke="#E8450A" strokeWidth="2"/>
-        <line x1="14" y1="140" x2="66" y2="140" stroke="#E8450A" strokeWidth="2"/>
-        <line x1="17" y1="200" x2="63" y2="200" stroke="#E8450A" strokeWidth="2"/>
-        <line x1="4" y1="75" x2="20" y2="260" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="76" y1="75" x2="60" y2="260" stroke="#E8450A" strokeWidth="1.5"/>
-        <line x1="0" y1="55" x2="80" y2="55" stroke="#E8450A" strokeWidth="2.5"/>
-        <line x1="-4" y1="28" x2="84" y2="28" stroke="#E8450A" strokeWidth="2.5"/>
+
+      {/* TORRE 4 — média direita */}
+      <g transform="translate(870,50)">
+        <line x1="45" y1="0" x2="22" y2="350" stroke="url(#torreGrad)" strokeWidth="3"/>
+        <line x1="45" y1="0" x2="68" y2="350" stroke="url(#torreGrad)" strokeWidth="3"/>
+        <line x1="22" y1="350" x2="68" y2="350" stroke={corTorre} strokeWidth="3"/>
+        <line x1="22" y1="350" x2="45" y2="230" stroke={corTorre} strokeWidth="1.4"/>
+        <line x1="68" y1="350" x2="45" y2="230" stroke={corTorre} strokeWidth="1.4"/>
+        <line x1="22" y1="230" x2="45" y2="140" stroke={corTorre} strokeWidth="1.4"/>
+        <line x1="68" y1="230" x2="45" y2="140" stroke={corTorre} strokeWidth="1.4"/>
+        <line x1="26" y1="140" x2="45" y2="70" stroke={corTorre} strokeWidth="1.4"/>
+        <line x1="64" y1="140" x2="45" y2="70" stroke={corTorre} strokeWidth="1.4"/>
+        <line x1="8" y1="230" x2="82" y2="230" stroke={corTorre} strokeWidth="2"/>
+        <line x1="10" y1="140" x2="80" y2="140" stroke={corTorre} strokeWidth="2"/>
+        <line x1="13" y1="70" x2="77" y2="70" stroke={corTorre} strokeWidth="2.2"/>
+        <line x1="-20" y1="32" x2="110" y2="32" stroke={corTorre} strokeWidth="2.5"/>
+        <line x1="-12" y1="10" x2="102" y2="10" stroke={corTorre} strokeWidth="2.5"/>
+        <line x1="45" y1="0" x2="45" y2="10" stroke={corTorre} strokeWidth="2.5"/>
+        <circle cx="-20" cy="32" r="3.5" fill={corTorre}/>
+        <circle cx="110" cy="32" r="3.5" fill={corTorre}/>
+        <circle cx="-12" cy="10" r="3.5" fill={corTorre}/>
+        <circle cx="102" cy="10" r="3.5" fill={corTorre}/>
+        <line x1="5" y1="338" x2="22" y2="350" stroke={corTorre} strokeWidth="2"/>
+        <line x1="85" y1="338" x2="68" y2="350" stroke={corTorre} strokeWidth="2"/>
       </g>
-      {/* Cabos entre torres */}
-      <path d="M 140 30 Q 240 80 325 25" stroke="#E8450A" strokeWidth="1.5" fill="none"/>
-      <path d="M 140 60 Q 240 110 325 55" stroke="#E8450A" strokeWidth="1.5" fill="none"/>
-      <path d="M 365 25 Q 430 60 505 35" stroke="#E8450A" strokeWidth="1.5" fill="none"/>
-      <path d="M 365 55 Q 430 90 505 65" stroke="#E8450A" strokeWidth="1.5" fill="none"/>
-      <path d="M 608 35 Q 670 70 735 55" stroke="#E8450A" strokeWidth="1.5" fill="none"/>
-      <path d="M 608 65 Q 670 100 735 83" stroke="#E8450A" strokeWidth="1.5" fill="none"/>
+
+      {/* TORRE 5 — pequena direita */}
+      <g transform="translate(1100,100)">
+        <line x1="35" y1="0" x2="18" y2="300" stroke="url(#torreGrad)" strokeWidth="2.5"/>
+        <line x1="35" y1="0" x2="52" y2="300" stroke="url(#torreGrad)" strokeWidth="2.5"/>
+        <line x1="18" y1="300" x2="52" y2="300" stroke={corTorre} strokeWidth="2.5"/>
+        <line x1="18" y1="300" x2="35" y2="190" stroke={corTorre} strokeWidth="1.2"/>
+        <line x1="52" y1="300" x2="35" y2="190" stroke={corTorre} strokeWidth="1.2"/>
+        <line x1="18" y1="190" x2="35" y2="110" stroke={corTorre} strokeWidth="1.2"/>
+        <line x1="52" y1="190" x2="35" y2="110" stroke={corTorre} strokeWidth="1.2"/>
+        <line x1="10" y1="190" x2="60" y2="190" stroke={corTorre} strokeWidth="1.8"/>
+        <line x1="12" y1="110" x2="58" y2="110" stroke={corTorre} strokeWidth="1.8"/>
+        <line x1="-15" y1="26" x2="85" y2="26" stroke={corTorre} strokeWidth="2.2"/>
+        <line x1="-8" y1="8" x2="78" y2="8" stroke={corTorre} strokeWidth="2.2"/>
+        <line x1="35" y1="0" x2="35" y2="8" stroke={corTorre} strokeWidth="2"/>
+        <circle cx="-15" cy="26" r="3" fill={corTorre}/>
+        <circle cx="85" cy="26" r="3" fill={corTorre}/>
+      </g>
+
+      {/* CABOS DE TRANSMISSÃO entre torres */}
+      <path d="M 115 10 Q 200 55 260 12" stroke={corTorre} strokeWidth="1.2" fill="none" opacity="0.8"/>
+      <path d="M 115 28 Q 200 75 260 35" stroke={corTorre} strokeWidth="1.2" fill="none" opacity="0.8"/>
+      <path d="M 390 12 Q 475 45 530 18" stroke={corTorre} strokeWidth="1.3" fill="none" opacity="0.8"/>
+      <path d="M 390 35 Q 475 68 530 45" stroke={corTorre} strokeWidth="1.3" fill="none" opacity="0.8"/>
+      <path d="M 700 18 Q 785 50 850 32" stroke={corTorre} strokeWidth="1.3" fill="none" opacity="0.8"/>
+      <path d="M 700 45 Q 785 78 850 62" stroke={corTorre} strokeWidth="1.3" fill="none" opacity="0.8"/>
+      <path d="M 980 32 Q 1040 55 1085 26" stroke={corTorre} strokeWidth="1.2" fill="none" opacity="0.8"/>
+      <path d="M 980 62 Q 1040 82 1085 55" stroke={corTorre} strokeWidth="1.2" fill="none" opacity="0.8"/>
+
+      {/* linha do horizonte / chão */}
+      <line x1="0" y1="398" x2="1200" y2="398" stroke={corTorre} strokeWidth="1" opacity="0.3"/>
     </svg>
   );
 }
@@ -1484,6 +1690,7 @@ function Configuracoes({ usuarios, onSalvarUsuario, onEditarUsuario, onExcluirUs
           usuario={modalUsuario}
           onClose={() => setModalUsuario(null)}
           onSalvar={(u) => { onEditarUsuario(u); setModalUsuario(null); }}
+          perfilAtual={perfilAtual}
         />
       )}
     </div>
@@ -1493,7 +1700,7 @@ function Configuracoes({ usuarios, onSalvarUsuario, onEditarUsuario, onExcluirUs
 // ============================================================
 // MODAL EDITAR USUARIO
 // ============================================================
-function ModalEditarUsuario({ usuario, onClose, onSalvar }) {
+function ModalEditarUsuario({ usuario, onClose, onSalvar, perfilAtual }) {
   const [form, setForm] = useState({ ...usuario });
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -1515,14 +1722,16 @@ function ModalEditarUsuario({ usuario, onClose, onSalvar }) {
             <input value={form.email} onChange={e => set("email", e.target.value)}
               className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
           </div>
-          <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase">Perfil</label>
-            <select value={form.perfil} onChange={e => set("perfil", e.target.value)}
-              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}>
-              <option value="operador">Operador</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
+          {perfilAtual === "admin" && (
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase">Perfil</label>
+              <select value={form.perfil} onChange={e => set("perfil", e.target.value)}
+                className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}>
+                <option value="operador">Operador</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          )}
         </div>
         <div className="flex justify-end gap-3 p-5 border-t" style={{ borderColor: "#f0f0f0" }}>
           <button onClick={onClose} className="px-4 py-2 rounded-lg border text-sm text-gray-600" style={{ borderColor: "#e5e7eb" }}>Cancelar</button>
@@ -1793,7 +2002,7 @@ export default function App() {
   }
 
   if (!usuarioAtual) {
-    return <TelaLogin onLogin={(user) => { setUsuarioAtual(user); }} />;
+    return <TelaLogin onLogin={(user) => { setUsuarioAtual(user); }} logoUrl={logoUrl} />;
   }
 
   if (carregando) {
@@ -1817,7 +2026,7 @@ export default function App() {
       {/* Sidebar com torres de fundo */}
       <aside className="w-64 flex-shrink-0 hidden md:flex flex-col relative overflow-hidden" style={{ background: "#fff4ee", minHeight: "100vh" }}>
         <div className="absolute inset-0 pointer-events-none" style={{ overflow: "hidden" }}>
-          <TorresSVG />
+          <TorresSVG opacity={0.08} />
         </div>
         <div className="relative z-10 p-5 border-b" style={{ borderColor: "#ffd6b8" }}>
           {logoUrl
