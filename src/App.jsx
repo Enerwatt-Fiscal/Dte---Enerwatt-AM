@@ -165,6 +165,7 @@ function exportarExcel(filtradas, empresas, periodo) {
 
 // ============================================================
 // EXPORTAÇÃO PDF COM GRÁFICOS — jsPDF + Canvas nativo
+// Layout fixo e controlado por coordenadas absolutas
 // ============================================================
 function gerarGraficoBarras(labels, values, colors, titulo, w, h) {
   const canvas = document.createElement("canvas");
@@ -312,150 +313,157 @@ function exportarPDF(filtradas, empresas, periodo) {
     const hojeFile = hoje.replace(/\//g, "-");
 
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    // A4 portrait: 210 x 297 mm
     const PW = 210, PH = 297;
     const PETROL = [26, 74, 74];
     const LARANJA = [232, 69, 10];
-    const TEAL = [77, 184, 184];
     const CINZA = [240, 246, 246];
+    const HEADER_H = 18; // altura do header
+    const FOOTER_Y = 287; // posição do rodapé
+    const MARGIN = 10; // margem lateral
+    const CONTENT_W = PW - MARGIN * 2; // 190mm
 
-    // ---- HELPERS ----
-    const header = (pg) => {
-      // Faixa topo petróleo
+    const drawHeader = () => {
       doc.setFillColor(...PETROL);
-      doc.rect(0, 0, PW, 16, "F");
-      // Linha laranja embaixo do header
+      doc.rect(0, 0, PW, HEADER_H, "F");
       doc.setFillColor(...LARANJA);
-      doc.rect(0, 16, PW, 2, "F");
-      // Texto header
+      doc.rect(0, HEADER_H, PW, 1.5, "F");
       doc.setTextColor(255, 255, 255);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text("ENERWATT  Gestão DTE/AM", 10, 10.5);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.text(`Relatório ${periodo.toUpperCase()} — ${hoje}`, PW - 10, 10.5, { align: "right" });
-      // Rodapé
-      doc.setFillColor(240, 246, 246);
-      doc.rect(0, PH - 10, PW, 10, "F");
-      doc.setTextColor(130, 160, 160);
-      doc.setFontSize(6.5);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Enerwatt Engenharia — Sistema DTE/AM — ${hoje} — Pág ${pg}`, PW / 2, PH - 4, { align: "center" });
+      doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+      doc.text("ENERWATT — Gestão DTE/AM", MARGIN, 11);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7.5);
+      doc.text(`Relatório ${periodo.toUpperCase()} · ${hoje}`, PW - MARGIN, 11, { align: "right" });
+    };
+
+    const drawFooter = (pg, total) => {
+      doc.setFillColor(...CINZA);
+      doc.rect(0, FOOTER_Y, PW, 10, "F");
+      doc.setTextColor(120, 150, 150);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(6.5);
+      doc.text(`Enerwatt Engenharia — Sistema DTE/AM — Gerado em ${hoje} — Pág ${pg}/${total}`, PW / 2, FOOTER_Y + 6, { align: "center" });
+    };
+
+    const sectionTitle = (y, texto) => {
+      doc.setFillColor(...CINZA);
+      doc.rect(MARGIN, y, CONTENT_W, 9, "F");
+      doc.setFillColor(...LARANJA);
+      doc.rect(MARGIN, y, 2.5, 9, "F");
+      doc.setTextColor(...PETROL);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(8.5);
+      doc.text(texto, MARGIN + 6, y + 6.2);
+      return y + 13; // retorna y após o título
     };
 
     // =============================================
-    // PÁGINA 1 — CAPA + KPIs + GRÁFICO DE PRAZOS
+    // CALCULAR DADOS
     // =============================================
-    header(1);
-
-    // Título da página
-    doc.setFillColor(...CINZA);
-    doc.rect(0, 20, PW, 14, "F");
-    doc.setTextColor(...PETROL);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.text("Indicadores de Gestão DTE/AM", 10, 30);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(100, 140, 140);
-    doc.text("Departamento Fiscal — Análise de Notas Pendentes de Desembaraço", 10, 36);
-
-    // ---- CARDS KPI ----
     const totalNotas = filtradas.length;
-    const notasAtivas = filtradas.filter(n => !["Desembaraçada","Recusada"].includes(n.status)).length;
+    const ativas = filtradas.filter(n => !["Desembaraçada","Recusada"].includes(n.status));
     const criticas = filtradas.filter(n => num(n.qtdeDias) >= 60).length;
     const atencao = filtradas.filter(n => num(n.qtdeDias) >= 25 && num(n.qtdeDias) < 60).length;
-    const ok = filtradas.filter(n => num(n.qtdeDias) < 25).length;
-    const totalValorNF = filtradas.reduce((s,n) => s + num(n.valor), 0);
-    const totalTaxas = filtradas.reduce((s,n) => s + num(n.taxaReanalise) + num(n.taxaDesembaraco), 0);
-    const totalIcms = filtradas.reduce((s,n) => s + num(n.icmsAntecipado), 0);
-    const totalMultas = filtradas.reduce((s,n) => s + num(n.multa), 0);
-    const totalJuros = filtradas.reduce((s,n) => s + num(n.juros), 0);
+    const totalTaxas = ativas.reduce((s,n) => s + num(n.taxaReanalise) + num(n.taxaDesembaraco), 0);
+    const totalIcms = ativas.reduce((s,n) => s + num(n.icmsAntecipado), 0);
+    const totalMultas = ativas.reduce((s,n) => s + num(n.multa), 0);
+    const totalJuros = ativas.reduce((s,n) => s + num(n.juros), 0);
     const totalCustos = totalTaxas + totalIcms + totalMultas + totalJuros;
 
-    const kpis = [
-      { label: "Total Notas", valor: totalNotas.toString(), sub: "no período", cor: PETROL },
-      { label: "Notas Ativas", valor: notasAtivas.toString(), sub: "pendentes", cor: TEAL },
-      { label: "Críticas", valor: criticas.toString(), sub: "60+ dias", cor: [192, 57, 43] },
-      { label: "Total Custos", valor: fmtM(totalCustos), sub: "registrados", cor: LARANJA },
-    ];
-    const kpiW = 44, kpiH = 22, kpiY = 42, kpiX0 = 9;
-    kpis.forEach((k, i) => {
-      const x = kpiX0 + i * (kpiW + 4);
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(x, kpiY, kpiW, kpiH, 2, 2, "F");
-      doc.setDrawColor(...k.cor);
-      doc.setLineWidth(0.6);
-      doc.roundedRect(x, kpiY, kpiW, kpiH, 2, 2, "S");
-      // Barra colorida esquerda
-      doc.setFillColor(...k.cor);
-      doc.roundedRect(x, kpiY, 2.5, kpiH, 1, 1, "F");
-      doc.setTextColor(...k.cor);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
-      doc.text(k.valor.length > 10 ? k.valor : k.valor, x + 6, kpiY + 13);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(7);
-      doc.setTextColor(80, 100, 100);
-      doc.text(k.label, x + 6, kpiY + 19);
-    });
+    // =============================================
+    // PÁGINA 1: KPIs + Gráfico Prazos + Gráfico Custos
+    // =============================================
+    drawHeader();
 
-    // ---- GRÁFICO 1: Notas por faixa de prazo (barras) ----
-    const faixasLabels = ["0-15d", "16-30d", "31-45d", "46-60d", "61-90d", "91-120d", "121-180d", "180+d"];
-    const faixasMins = [0, 16, 31, 46, 61, 91, 121, 181];
-    const faixasMaxs = [15, 30, 45, 60, 90, 120, 180, 9999];
-    const faixasVals = faixasMins.map((min, i) =>
+    // -- Subtítulo
+    let y = HEADER_H + 2;
+    doc.setFillColor(250, 252, 252);
+    doc.rect(0, y, PW, 11, "F");
+    doc.setTextColor(...PETROL); doc.setFont("helvetica","bold"); doc.setFontSize(11);
+    doc.text("Indicadores de Gestão DTE/AM", MARGIN, y + 8);
+    y += 15;
+
+    // -- KPIs (4 cards lado a lado, 44mm cada)
+    const kpis = [
+      { label: "Total Notas", val: String(totalNotas), cor: PETROL },
+      { label: "Críticas 60+d", val: String(criticas), cor: [192, 57, 43] },
+      { label: "Atenção 25-59d", val: String(atencao), cor: [200, 130, 0] },
+      { label: "Custos Ativos", val: fmtM(totalCustos), cor: LARANJA },
+    ];
+    const kW = 45, kH = 18, kGap = 2.5;
+    kpis.forEach((k, i) => {
+      const x = MARGIN + i * (kW + kGap);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(x, y, kW, kH, 1.5, 1.5, "F");
+      doc.setFillColor(...k.cor);
+      doc.rect(x, y, 2.5, kH, "F");
+      doc.setTextColor(...k.cor);
+      doc.setFont("helvetica","bold");
+      // valor menor se for moeda para caber
+      doc.setFontSize(k.val.length > 8 ? 8 : 13);
+      doc.text(k.val, x + 5, y + (k.val.length > 8 ? 8 : 11));
+      doc.setFont("helvetica","normal"); doc.setFontSize(6.5);
+      doc.setTextColor(90, 110, 110);
+      doc.text(k.label, x + 5, y + 15);
+    });
+    y += kH + 6;
+
+    // -- Gráfico 1: Faixas de prazo (60mm altura)
+    y = sectionTitle(y, "Distribuição de Notas por Faixa de Prazo");
+    const faixasLabels = ["0-15d","16-30d","31-45d","46-60d","61-90d","91-120d","121+d"];
+    const faixasMins  = [0, 16, 31, 46, 61, 91, 121];
+    const faixasMaxs  = [15, 30, 45, 60, 90, 120, 9999];
+    const faixasVals  = faixasMins.map((min, i) =>
       filtradas.filter(n => num(n.qtdeDias) >= min && num(n.qtdeDias) <= faixasMaxs[i]).length
     );
-    const coresFaixas = ["#4db8b8","#4db8b8","#f0a500","#f0a500","#E8450A","#E8450A","#c0392b","#7b0000"];
-    const g1 = gerarGraficoBarras(faixasLabels, faixasVals, coresFaixas, "Distribuição de Notas por Faixa de Prazo", 190, 90);
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(9, 70, 192, 88, 2, 2, "F");
-    doc.addImage(g1, "PNG", 9, 70, 192, 88);
+    const coresFaixas = ["#4db8b8","#4db8b8","#f0a500","#f0a500","#E8450A","#c0392b","#7b0000"];
+    const G1_H = 60; // altura em mm no PDF
+    const g1img = gerarGraficoBarras(faixasLabels, faixasVals, coresFaixas, "", 380, 120);
+    doc.setFillColor(255,255,255);
+    doc.rect(MARGIN, y, CONTENT_W, G1_H, "F");
+    doc.addImage(g1img, "PNG", MARGIN, y, CONTENT_W, G1_H);
+    y += G1_H + 5;
 
-    // ---- GRÁFICO 2: Composição dos custos (pizza) ----
-    const custoLabels = ["Taxas", "ICMS Antecipado", "Multas", "Juros"];
+    // -- Gráfico 2: Pizza custos (55mm altura)
+    y = sectionTitle(y, "Composição dos Custos Registrados (Notas Ativas)");
+    const G2_H = 58;
+    const custoLabels = ["Taxas","ICMS Antecipado","Multas","Juros"];
     const custoVals = [totalTaxas, totalIcms, totalMultas, totalJuros];
-    const coresCustos = ["#1a4a4a", "#4db8b8", "#E8450A", "#f0a500"];
-    const g2 = gerarGraficoPizza(custoLabels, custoVals, coresCustos, "Composição dos Custos Registrados", 192, 95);
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(9, 162, 192, 90, 2, 2, "F");
-    doc.addImage(g2, "PNG", 9, 162, 192, 90);
+    const coresCustos = ["#1a4a4a","#4db8b8","#E8450A","#f0a500"];
+    const g2img = gerarGraficoPizza(custoLabels, custoVals, coresCustos, "", 380, 116);
+    doc.setFillColor(255,255,255);
+    doc.rect(MARGIN, y, CONTENT_W, G2_H, "F");
+    doc.addImage(g2img, "PNG", MARGIN, y, CONTENT_W, G2_H);
+    y += G2_H + 5;
 
-    // ---- RESUMO NUMÉRICO dos custos ----
-    const y0 = 256;
-    doc.setFillColor(...CINZA);
-    doc.roundedRect(9, y0, 192, 28, 2, 2, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(...PETROL);
-    doc.text("RESUMO DE CUSTOS — NOTAS ATIVAS", 14, y0 + 7);
-    const custoCols = [
+    // -- Tabela resumo custos (4 colunas)
+    const colW4 = CONTENT_W / 4;
+    const custoCols2 = [
       { label: "Taxas", val: fmtM(totalTaxas) },
       { label: "ICMS Antecipado", val: fmtM(totalIcms) },
       { label: "Multas", val: fmtM(totalMultas) },
-      { label: "Juros", val: fmtM(totalJuros) },
-      { label: "TOTAL", val: fmtM(totalCustos) },
+      { label: "Juros + Total", val: fmtM(totalCustos) },
     ];
-    custoCols.forEach((c, i) => {
-      const x = 14 + i * 38;
-      doc.setFont("helvetica", "normal"); doc.setFontSize(6.5); doc.setTextColor(90, 120, 120);
-      doc.text(c.label, x, y0 + 15);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(i === 4 ? 232 : 26, i === 4 ? 69 : 74, i === 4 ? 10 : 74);
-      doc.setFontSize(7.5);
-      doc.text(c.val, x, y0 + 22);
+    doc.setFillColor(...CINZA);
+    doc.rect(MARGIN, y, CONTENT_W, 16, "F");
+    custoCols2.forEach((c, i) => {
+      const x = MARGIN + i * colW4 + 3;
+      doc.setFont("helvetica","normal"); doc.setFontSize(6.5); doc.setTextColor(100,130,130);
+      doc.text(c.label, x, y + 6);
+      doc.setFont("helvetica","bold"); doc.setFontSize(8);
+      doc.setTextColor(i === 3 ? 232 : 26, i === 3 ? 69 : 74, i === 3 ? 10 : 74);
+      doc.text(c.val, x, y + 13);
     });
 
     // =============================================
-    // PÁGINA 2 — GRÁFICO POR EMPRESA + RANKING FORNECEDORES
+    // PÁGINA 2: Gráficos por Empresa + Ranking
     // =============================================
     doc.addPage();
-    header(2);
+    drawHeader();
+    y = HEADER_H + 5;
 
-    // ---- GRÁFICO 3: Notas por empresa (barras) ----
+    // Empresa map
     const empMap = {};
     filtradas.forEach(n => {
       const nm = nomeEmp(n.empresa);
-      if (!empMap[nm]) empMap[nm] = { qtde: 0, criticas: 0, custos: 0 };
+      if (!empMap[nm]) empMap[nm] = { qtde:0, criticas:0, custos:0 };
       empMap[nm].qtde++;
       if (num(n.qtdeDias) >= 60) empMap[nm].criticas++;
       empMap[nm].custos += num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros);
@@ -463,15 +471,32 @@ function exportarPDF(filtradas, empresas, periodo) {
     const empNomes = Object.keys(empMap);
     const empQtdes = empNomes.map(e => empMap[e].qtde);
     const empCriticas = empNomes.map(e => empMap[e].criticas);
-    const g3a = gerarGraficoBarras(empNomes, empQtdes, ["#1a4a4a","#4db8b8","#E8450A"], "Notas por Empresa — Quantidade Total", 192, 80);
-    const g3b = gerarGraficoBarras(empNomes, empCriticas, ["#c0392b","#E8450A","#f0a500"], "Notas Críticas (60+ dias) por Empresa", 192, 80);
+    const empCustos = empNomes.map(e => empMap[e].custos);
 
-    doc.setFillColor(255,255,255); doc.roundedRect(9, 20, 192, 82, 2, 2, "F");
-    doc.addImage(g3a, "PNG", 9, 20, 192, 82);
-    doc.setFillColor(255,255,255); doc.roundedRect(9, 106, 192, 82, 2, 2, "F");
-    doc.addImage(g3b, "PNG", 9, 106, 192, 82);
+    // Gráfico por empresa — quantidade (50mm)
+    y = sectionTitle(y, "Notas por Empresa — Quantidade Total");
+    const g3img = gerarGraficoBarras(empNomes, empQtdes, ["#1a4a4a","#4db8b8","#E8450A"], "", 380, 100);
+    doc.setFillColor(255,255,255); doc.rect(MARGIN, y, CONTENT_W, 50, "F");
+    doc.addImage(g3img, "PNG", MARGIN, y, CONTENT_W, 50);
+    y += 55;
 
-    // ---- RANKING DE FORNECEDORES ----
+    // Gráfico por empresa — críticas (50mm)
+    y = sectionTitle(y, "Notas Críticas (60+ dias) por Empresa");
+    const g4img = gerarGraficoBarras(empNomes, empCriticas, ["#c0392b","#E8450A","#f0a500"], "", 380, 100);
+    doc.setFillColor(255,255,255); doc.rect(MARGIN, y, CONTENT_W, 50, "F");
+    doc.addImage(g4img, "PNG", MARGIN, y, CONTENT_W, 50);
+    y += 55;
+
+    // Ranking fornecedores
+    y = sectionTitle(y, "Top 10 Fornecedores por Custo Acumulado");
+
+    const theadCols = [MARGIN, MARGIN+68, MARGIN+90, MARGIN+112, MARGIN+144, MARGIN+170];
+    doc.setFillColor(...PETROL);
+    doc.rect(MARGIN, y-1, CONTENT_W, 8, "F");
+    doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
+    ["#","Razão Social","Qtde","Prazo Máx","Custo Acum.","Risco"].forEach((h,i) => doc.text(h, theadCols[i], y+5));
+    y += 10;
+
     const fornMap = {};
     filtradas.forEach(n => {
       const k = n.razaoSocial || n.fornecedor || "Desconhecido";
@@ -480,97 +505,76 @@ function exportarPDF(filtradas, empresas, periodo) {
       fornMap[k].custos += num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros);
       if (num(n.qtdeDias) > fornMap[k].diasMax) fornMap[k].diasMax = num(n.qtdeDias);
     });
-    const ranking = Object.entries(fornMap).sort((a,b) => b[1].custos - a[1].custos).slice(0, 10);
-
-    let ry = 192;
-    doc.setFillColor(...CINZA);
-    doc.rect(0, ry - 4, PW, 12, "F");
-    doc.setFillColor(...LARANJA);
-    doc.rect(0, ry - 4, 2.5, 12, "F");
-    doc.setTextColor(...PETROL); doc.setFont("helvetica","bold"); doc.setFontSize(9);
-    doc.text("Top 10 Fornecedores por Custo Acumulado", 10, ry + 4);
-    ry += 12;
-
-    // Cabeçalho tabela
-    const tcols = [10, 85, 108, 130, 155, 180];
-    const thead = ["Fornecedor / Razão Social","Qtde","Maior Prazo","Custo Acum.","Risco"];
-    doc.setFillColor(...PETROL);
-    doc.rect(9, ry - 4, 192, 8, "F");
-    doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(7);
-    thead.forEach((h,i) => doc.text(h, tcols[i+1], ry + 1));
-    doc.text("#", tcols[0], ry + 1);
-    ry += 8;
-
-    ranking.forEach(([nome, d], i) => {
-      if (i % 2 === 0) { doc.setFillColor(240,248,248); doc.rect(9, ry-4, 192, 7, "F"); }
+    Object.entries(fornMap).sort((a,b) => b[1].custos - a[1].custos).slice(0,10).forEach(([nome, d], i) => {
+      if (i % 2 === 0) { doc.setFillColor(242,250,250); doc.rect(MARGIN, y-3, CONTENT_W, 7, "F"); }
       const risco = d.diasMax >= 60 ? "ALTO" : d.diasMax >= 25 ? "MÉDIO" : "BAIXO";
-      const riscoColor = d.diasMax >= 60 ? [192,57,43] : d.diasMax >= 25 ? [200,120,0] : [26,120,80];
-      doc.setTextColor(50, 70, 70); doc.setFont("helvetica","normal"); doc.setFontSize(7);
-      doc.text(String(i+1), tcols[0], ry);
-      doc.text(nome.slice(0,36), tcols[1], ry);
-      doc.text(String(d.qtde), tcols[2], ry);
-      doc.text(`${d.diasMax}d`, tcols[3], ry);
-      doc.text(fmtM(d.custos), tcols[4], ry);
-      doc.setTextColor(...riscoColor); doc.setFont("helvetica","bold");
-      doc.text(risco, tcols[5], ry);
-      ry += 8;
+      const rc = d.diasMax >= 60 ? [192,57,43] : d.diasMax >= 25 ? [180,110,0] : [30,110,70];
+      doc.setFont("helvetica","normal"); doc.setFontSize(6.5); doc.setTextColor(50,70,70);
+      doc.text(String(i+1), theadCols[0], y+2);
+      doc.text(nome.slice(0,34), theadCols[1], y+2);
+      doc.text(String(d.qtde), theadCols[2], y+2);
+      doc.text(`${d.diasMax}d`, theadCols[3], y+2);
+      doc.text(fmtM(d.custos), theadCols[4], y+2);
+      doc.setTextColor(...rc); doc.setFont("helvetica","bold");
+      doc.text(risco, theadCols[5], y+2);
+      y += 8;
     });
 
     // =============================================
-    // PÁGINA 3 — LISTAGEM COMPLETA
+    // PÁGINA 3+: Listagem completa
     // =============================================
     doc.addPage();
-    header(3);
+    drawHeader();
+    let ly = HEADER_H + 5;
+    ly = sectionTitle(ly, "Listagem Completa de Notas");
 
-    let ly = 24;
-    doc.setFillColor(...CINZA);
-    doc.rect(0, ly - 2, PW, 10, "F");
-    doc.setFillColor(...LARANJA); doc.rect(0, ly - 2, 2.5, 10, "F");
-    doc.setTextColor(...PETROL); doc.setFont("helvetica","bold"); doc.setFontSize(9);
-    doc.text("Listagem Completa de Notas", 10, ly + 5);
-    ly += 14;
+    const lCols = [MARGIN, MARGIN+55, MARGIN+80, MARGIN+94, MARGIN+108, MARGIN+118, MARGIN+145, MARGIN+170];
+    const lHeads = ["Razão Social","NF","CFOP","Emissão","Dias","Status","Custo Total"];
 
-    const tcols2 = [10, 68, 90, 106, 122, 134, 162, 184];
-    const theads2 = ["Razão Social","Nº Nota","CFOP","Emissão","Dias","Status","Custo Total"];
-    doc.setFillColor(...PETROL);
-    doc.rect(9, ly - 4, 192, 8, "F");
-    doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
-    doc.text("Empresa", tcols2[0], ly);
-    theads2.forEach((h,i) => doc.text(h, tcols2[i+1], ly));
-    ly += 8;
+    const drawTableHeader = () => {
+      doc.setFillColor(...PETROL);
+      doc.rect(MARGIN, ly-2, CONTENT_W, 8, "F");
+      doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
+      doc.text("Empresa", lCols[0], ly+4);
+      lHeads.forEach((h,i) => doc.text(h, lCols[i+1], ly+4));
+      ly += 10;
+    };
+    drawTableHeader();
 
     filtradas.forEach((n, i) => {
-      if (ly > PH - 16) {
+      if (ly > FOOTER_Y - 10) {
+        drawFooter(doc.internal.getNumberOfPages(), "?");
         doc.addPage();
-        header(doc.internal.getNumberOfPages());
-        ly = 24;
-        doc.setFillColor(...PETROL);
-        doc.rect(9, ly - 4, 192, 8, "F");
-        doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
-        doc.text("Empresa", tcols2[0], ly);
-        theads2.forEach((h,ii) => doc.text(h, tcols2[ii+1], ly));
-        ly += 8;
+        drawHeader();
+        ly = HEADER_H + 5;
+        drawTableHeader();
       }
-      if (i % 2 === 0) { doc.setFillColor(242,248,248); doc.rect(9, ly - 4, 192, 7, "F"); }
+      if (i % 2 === 0) { doc.setFillColor(244,250,250); doc.rect(MARGIN, ly-3, CONTENT_W, 7, "F"); }
       const custo = num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros);
       const isCrit = num(n.qtdeDias) >= 60;
-      doc.setFont("helvetica","normal"); doc.setFontSize(6.5);
-      doc.setTextColor(50,70,70);
-      doc.text(nomeEmp(n.empresa).slice(0,20), tcols2[0], ly);
-      doc.text((n.razaoSocial||"").slice(0,28), tcols2[1], ly);
-      doc.text(n.numNota||"", tcols2[2], ly);
-      doc.text(n.cfop||"", tcols2[3], ly);
-      doc.text(n.dtEmissao||"", tcols2[4], ly);
-      doc.setTextColor(...(isCrit ? [192,57,43] : [50,70,70]));
+      doc.setFont("helvetica","normal"); doc.setFontSize(6.5); doc.setTextColor(50,70,70);
+      doc.text(nomeEmp(n.empresa).slice(0,18), lCols[0], ly+2);
+      doc.text((n.razaoSocial||"").slice(0,26), lCols[1], ly+2);
+      doc.text(n.numNota||"", lCols[2], ly+2);
+      doc.text(n.cfop||"", lCols[3], ly+2);
+      doc.text(n.dtEmissao||"", lCols[4], ly+2);
       doc.setFont("helvetica", isCrit ? "bold" : "normal");
-      doc.text(`${n.qtdeDias||0}d`, tcols2[5], ly);
+      doc.setTextColor(...(isCrit ? [192,57,43] : [50,70,70]));
+      doc.text(`${n.qtdeDias||0}d`, lCols[5], ly+2);
       doc.setFont("helvetica","normal"); doc.setTextColor(50,70,70);
-      doc.text((n.status||"").slice(0,22), tcols2[6], ly);
-      doc.setTextColor(custo > 0 ? 232 : 50, custo > 0 ? 69 : 70, custo > 0 ? 10 : 70);
+      doc.text((n.status||"").slice(0,18), lCols[6], ly+2);
       doc.setFont("helvetica", custo > 0 ? "bold" : "normal");
-      doc.text(fmtM(custo), tcols2[7], ly);
+      doc.setTextColor(custo > 0 ? 232 : 50, custo > 0 ? 69 : 70, custo > 0 ? 10 : 70);
+      doc.text(fmtM(custo), lCols[7], ly+2);
       ly += 7;
     });
+
+    // Rodapés em todas as páginas
+    const totalPgs = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= totalPgs; p++) {
+      doc.setPage(p);
+      drawFooter(p, totalPgs);
+    }
 
     doc.save(`DTE-Enerwatt-${periodo}-${hojeFile}.pdf`);
   } catch(e) {
