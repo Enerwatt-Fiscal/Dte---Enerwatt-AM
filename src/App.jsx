@@ -355,46 +355,74 @@ function TelaLogin({ onLogin, logoUrl }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(160deg, #2a3328 0%, #3d4e38 35%, #4a5e42 65%, #5a6e50 100%)", fontFamily: "'Segoe UI', system-ui, sans-serif", position: "relative", overflow: "hidden" }}>
-      {/* Torres de transmissão no fundo */}
-      <TorresSVG opacity={0.22} corTorre="#1a2a18" />
-      {/* Overlay suave */}
-      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 100%, rgba(90,110,80,0.3) 0%, transparent 70%)" }} />
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" style={{ position: "relative", zIndex: 10 }}>
-        {/* Header laranja */}
-        <div className="p-8 text-center" style={{ background: "#E8450A" }}>
+    <div className="min-h-screen flex" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", background: "white", position: "relative", overflow: "hidden" }}>
+      {/* Barra laranja topo */}
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: "4px", background: "#E8450A", zIndex: 50 }} />
+
+      {/* LADO ESQUERDO — formulário limpo branco */}
+      <div className="flex flex-col justify-center" style={{ width: "45%", minHeight: "100vh", padding: "3rem 4rem", position: "relative", zIndex: 10, background: "white" }}>
+        {/* Logo */}
+        <div className="mb-10">
           {logoUrl
-            ? <img src={logoUrl} alt="Logo" className="h-16 object-contain mx-auto mb-3" style={{ filter: "brightness(0) invert(1)" }} />
-            : <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-white text-2xl mx-auto mb-3" style={{ background: "rgba(255,255,255,0.2)" }}>E</div>
+            ? <img src={logoUrl} alt="Logo" className="h-12 object-contain" />
+            : (
+              <div>
+                <p className="font-black text-3xl" style={{ color: "#1a4a4a", fontFamily: "Georgia, serif", fontStyle: "italic" }}>Enerwatt</p>
+                <p className="text-xs tracking-widest uppercase" style={{ color: "#E8450A", marginTop: 2 }}>Engenharia</p>
+              </div>
+            )
           }
-          <p className="font-black text-white text-xl">Enerwatt</p>
-          <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.8)" }}>Gestão DTE/AM</p>
         </div>
+
+        {/* Texto de boas-vindas */}
+        <div className="mb-8">
+          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#E8450A" }}>DEPARTAMENTO FISCAL</p>
+          <h1 className="text-3xl font-black mb-2" style={{ color: "#1a4a4a" }}>Gestão DTE/AM</h1>
+          <p className="text-sm" style={{ color: "#6b8c8c" }}>Sistema de Controle de Desembaraço Extemporâneo</p>
+        </div>
+
         {/* Formulário */}
-        <div className="p-8 space-y-4">
+        <div className="space-y-4" style={{ maxWidth: 360 }}>
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase">E-mail</label>
+            <label className="text-xs font-bold uppercase tracking-wide" style={{ color: "#1a4a4a" }}>E-mail</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleLogin()}
               placeholder="seu@enerwatt.com.br"
-              className="mt-1 w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2" 
-              style={{ borderColor: "#e5e7eb", focusRingColor: "#E8450A" }} />
+              className="mt-1.5 w-full rounded-lg px-4 py-3 text-sm focus:outline-none"
+              style={{ border: "1.5px solid #c8dede", background: "#f8fafa", color: "#1a4a4a" }} />
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase">Senha</label>
+            <label className="text-xs font-bold uppercase tracking-wide" style={{ color: "#1a4a4a" }}>Senha</label>
             <input type="password" value={senha} onChange={e => setSenha(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleLogin()}
               placeholder="••••••••"
-              className="mt-1 w-full border rounded-xl px-4 py-3 text-sm focus:outline-none" 
-              style={{ borderColor: "#e5e7eb" }} />
+              className="mt-1.5 w-full rounded-lg px-4 py-3 text-sm focus:outline-none"
+              style={{ border: "1.5px solid #c8dede", background: "#f8fafa", color: "#1a4a4a" }} />
           </div>
-          {erro && <p className="text-xs text-red-500 font-semibold">{erro}</p>}
+          {erro && <p className="text-xs font-semibold" style={{ color: "#c0392b" }}>{erro}</p>}
           <button onClick={handleLogin} disabled={carregando}
-            className="w-full py-3 rounded-xl text-sm font-bold text-white disabled:opacity-60 mt-2"
-            style={{ background: "#E8450A" }}>
-            {carregando ? "Entrando..." : "Entrar"}
+            className="w-full py-3 rounded-lg text-sm font-bold text-white disabled:opacity-60 transition-opacity hover:opacity-90"
+            style={{ background: "#E8450A", marginTop: 8 }}>
+            {carregando ? "Entrando..." : "Entrar →"}
           </button>
-          <p className="text-xs text-center text-gray-400 mt-4">Acesso restrito — Enerwatt Engenharia</p>
+        </div>
+
+        <p className="text-xs mt-8" style={{ color: "#aec4c4" }}>Acesso restrito — Enerwatt Engenharia</p>
+      </div>
+
+      {/* LADO DIREITO — fundo azul-teal com torre */}
+      <div style={{ width: "55%", minHeight: "100vh", position: "relative", overflow: "hidden",
+        background: "linear-gradient(145deg, #b8d8d8 0%, #7ecece 30%, #4db8b8 60%, #1a7a7a 100%)" }}>
+        {/* Torres SVG grandes */}
+        <TorresSVG opacity={0.35} corTorre="#0d3535" />
+        {/* Brilho suave */}
+        <div style={{ position: "absolute", inset: 0,
+          background: "radial-gradient(ellipse at 60% 30%, rgba(255,255,255,0.18) 0%, transparent 55%), radial-gradient(ellipse at 30% 80%, rgba(13,53,53,0.25) 0%, transparent 50%)" }} />
+        {/* Tag no canto inferior */}
+        <div style={{ position: "absolute", bottom: 32, left: 32 }}>
+          <p className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.9)" }}>Transformar Energia</p>
+          <p className="text-sm font-black" style={{ color: "white" }}>em Desenvolvimento</p>
+          <div style={{ width: 40, height: 3, background: "#E8450A", borderRadius: 2, marginTop: 6 }} />
         </div>
       </div>
     </div>
@@ -517,7 +545,7 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
         </div>
 
         {/* Próximo Passo */}
-        <div className="mx-5 mt-4 p-3 rounded-xl text-sm font-medium" style={{ background: "#fff7f0", border: "1px solid #ffd6b8", color: "#b84a00" }}>
+        <div className="mx-5 mt-4 p-3 rounded-xl text-sm font-medium" style={{ background: "#f0f8f8", border: "1px solid #ffd6b8", color: "#b84a00" }}>
           {getProximoPasso(form)}
         </div>
 
@@ -633,7 +661,7 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
                     className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
                 </div>
               ))}
-              <div className="col-span-2 p-4 rounded-xl" style={{ background: "#fff7f0", border: "1px solid #ffd6b8" }}>
+              <div className="col-span-2 p-4 rounded-xl" style={{ background: "#f0f8f8", border: "1px solid #ffd6b8" }}>
                 <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Total de Custos</p>
                 <p className="text-2xl font-bold" style={{ color: "#E8450A" }}>
                   {fmtMoeda((form.taxaReanalise || 0) + (form.taxaDesembaraco || 0) + (form.icmsAntecipado || 0) + (form.multa || 0) + (form.juros || 0))}
@@ -759,7 +787,7 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
     { label: "Acima de R$ 25k", valor: acima25k.length, sub: "Risco multa 10% • clique para ver", cor: "#7e3af2", bg: "#f5f3ff", icon: "⚠️", filtro: "acima25k", clicavel: true },
     { label: "Aguard. Pagamento", valor: aguardPag.length, sub: "Financeiro pendente • clique para ver", cor: "#1a56db", bg: "#eff6ff", icon: "💰", filtro: "pagamento", clicavel: true },
     { label: "Desembaraçadas", valor: desembaracadas.length, sub: "Concluídas no período", cor: "#2d6a4f", bg: "#f0fdf4", icon: "✅", filtro: null, clicavel: false },
-    { label: "Custos Registrados", valor: fmtMoeda(totalCustos), sub: "Taxas + ICMS + Multas", cor: "#E8450A", bg: "#fff7f0", icon: "📊", filtro: null, clicavel: false },
+    { label: "Custos Registrados", valor: fmtMoeda(totalCustos), sub: "Taxas + ICMS + Multas", cor: "#E8450A", bg: "#f0f8f8", icon: "📊", filtro: null, clicavel: false },
   ];
 
   return (
@@ -903,9 +931,9 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
     <div className="space-y-4">
 
       {/* Banner de importação destacado */}
-      <div className="rounded-2xl p-4 flex items-center justify-between" style={{ background: "#fff7f0", border: "2px dashed #E8450A" }}>
+      <div className="rounded-2xl p-4 flex items-center justify-between" style={{ background: "#f0f8f8", border: "2px dashed #E8450A" }}>
         <div>
-          <p className="font-bold text-sm" style={{ color: "#E8450A" }}>📥 Importar arquivo do DTE</p>
+          <p className="font-bold text-sm" style={{ color: "#1a4a4a" }}>📥 Importar arquivo do DTE</p>
           <p className="text-xs text-gray-500 mt-0.5">
             Faça upload do CSV/Excel exportado do DTE semanalmente.
             {ultimaImportacao && <span className="ml-2 font-medium text-gray-600">Última importação: {ultimaImportacao}</span>}
@@ -1011,7 +1039,7 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
             </thead>
             <tbody>
               {filtradas.map((n, i) => (
-                <tr key={n.id} className="border-t hover:bg-orange-50 transition-colors" style={{ borderColor: "#f0f0f0" }}>
+                <tr key={n.id} className="border-t hover:bg-teal-50 transition-colors" style={{ borderColor: "#f0f0f0" }}>
                   <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">{EMPRESAS.find(e => e.id === n.empresa)?.nome?.split(" - ")[1] || n.empresa}</td>
                   <td className="px-3 py-3 max-w-xs">
                     <p className="font-medium text-gray-800 text-xs truncate" title={n.razaoSocial}>{n.razaoSocial}</p>
@@ -1372,7 +1400,7 @@ function Relatorios({ notas }) {
               <span className="font-bold text-sm" style={{ color: c.valor > 0 ? "#c0392b" : "#9ca3af" }}>{fmtMoeda(c.valor)}</span>
             </div>
           ))}
-          <div className="flex justify-between items-center p-3 rounded-xl" style={{ background: "#fff7f0", border: "1px solid #ffd6b8" }}>
+          <div className="flex justify-between items-center p-3 rounded-xl" style={{ background: "#f0f8f8", border: "1px solid #ffd6b8" }}>
             <span className="font-bold text-gray-700">TOTAL GERAL</span>
             <span className="font-black text-xl" style={{ color: "#E8450A" }}>{fmtMoeda(totalGeral)}</span>
           </div>
@@ -1992,10 +2020,10 @@ export default function App() {
 
   if (loginCarregando) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#fff4ee" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#1a4a4a" }}>
         <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-white text-2xl mx-auto mb-4" style={{ background: "#E8450A" }}>E</div>
-          <p className="text-sm text-gray-400 mt-2">Carregando...</p>
+          <div className="w-16 h-16 rounded-xl flex items-center justify-center font-black text-white text-2xl mx-auto mb-4" style={{ background: "#E8450A" }}>E</div>
+          <p className="text-sm mt-2" style={{ color: "#4db8b8" }}>Carregando...</p>
         </div>
       </div>
     );
@@ -2007,12 +2035,12 @@ export default function App() {
 
   if (carregando) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#fff4ee", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0d3535", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
         <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-white text-2xl mx-auto mb-4" style={{ background: "#E8450A" }}>E</div>
-          <p className="font-bold text-gray-700 text-lg">Enerwatt</p>
-          <p className="text-sm text-gray-400 mt-1">Carregando sistema...</p>
-          <div className="mt-4 w-48 h-1 bg-gray-200 rounded-full mx-auto overflow-hidden">
+          <div className="w-16 h-16 rounded-xl flex items-center justify-center font-black text-white text-2xl mx-auto mb-4" style={{ background: "#E8450A" }}>E</div>
+          <p className="font-bold text-white text-lg">Enerwatt</p>
+          <p className="text-sm mt-1" style={{ color: "#4db8b8" }}>Carregando sistema...</p>
+          <div className="mt-4 w-48 h-1 rounded-full mx-auto overflow-hidden" style={{ background: "rgba(77,184,184,0.2)" }}>
             <div className="h-full rounded-full animate-pulse" style={{ background: "#E8450A", width: "60%" }}></div>
           </div>
         </div>
@@ -2021,70 +2049,78 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", background: "#fff4ee" }}>
+    <div className="min-h-screen flex" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", background: "#edf5f5" }}>
 
-      {/* Sidebar com torres de fundo */}
-      <aside className="w-64 flex-shrink-0 hidden md:flex flex-col relative overflow-hidden" style={{ background: "#fff4ee", minHeight: "100vh" }}>
+      {/* SIDEBAR — petróleo escuro estilo imagem 3 */}
+      <aside className="w-56 flex-shrink-0 hidden md:flex flex-col" style={{ background: "#1a4a4a", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+        {/* Torres decorativas sutis */}
         <div className="absolute inset-0 pointer-events-none" style={{ overflow: "hidden" }}>
-          <TorresSVG opacity={0.08} />
+          <TorresSVG opacity={0.06} corTorre="#7ecece" />
         </div>
-        <div className="relative z-10 p-5 border-b" style={{ borderColor: "#ffd6b8" }}>
+        {/* Logo topo */}
+        <div className="relative z-10 px-5 py-4" style={{ borderBottom: "1px solid rgba(126,206,206,0.15)" }}>
           {logoUrl
-            ? <img src={logoUrl} alt="Logo" className="h-10 object-contain" />
+            ? <img src={logoUrl} alt="Logo" className="h-9 object-contain" style={{ filter: "brightness(0) invert(1)" }} />
             : (
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-lg" style={{ background: "#E8450A" }}>E</div>
-                <div>
-                  <p className="font-bold text-sm" style={{color:"#b84a00"}}>Enerwatt</p>
-                  <p className="text-xs" style={{ color: "#E8450A" }}>Gestão DTE/AM</p>
-                </div>
+              <div>
+                <p className="font-black text-lg text-white" style={{ fontFamily: "Georgia, serif", fontStyle: "italic" }}>Enerwatt</p>
+                <p className="text-xs tracking-widest" style={{ color: "#E8450A" }}>ENGENHARIA</p>
               </div>
             )}
         </div>
-        <nav className="relative z-10 flex-1 p-4 space-y-1">
+
+        {/* Nav */}
+        <nav className="relative z-10 flex-1 px-3 py-4 space-y-0.5">
           {navItems.map(item => (
             <button key={item.id} onClick={() => setTela(item.id)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left"
-              style={tela === item.id ? { background: "#E8450A", color: "white" } : { color: "#c25a1a" }}>
-              <span>{item.icon}</span>
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left"
+              style={tela === item.id
+                ? { background: "#E8450A", color: "white" }
+                : { color: "rgba(255,255,255,0.6)", background: "transparent" }}>
+              <span className="text-base">{item.icon}</span>
               <span>{item.label}</span>
               {item.id === "dashboard" && criticas > 0 && (
-                <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: tela === "dashboard" ? "rgba(255,255,255,0.3)" : "#c0392b", color: "white" }}>{criticas}</span>
+                <span className="ml-auto text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ background: tela === "dashboard" ? "rgba(255,255,255,0.3)" : "#c0392b", color: "white" }}>{criticas}</span>
               )}
             </button>
           ))}
         </nav>
-        <div className="relative z-10 p-4 border-t" style={{ borderColor: "#ffd6b8" }}>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0" style={{ background: "#E8450A" }}>{usuarioAtual.nome.charAt(0)}</div>
+
+        {/* Usuário */}
+        <div className="relative z-10 px-3 py-4" style={{ borderTop: "1px solid rgba(126,206,206,0.15)" }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: "#E8450A" }}>{usuarioAtual.nome.charAt(0)}</div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold truncate" style={{color:"#b84a00"}}>{usuarioAtual.nome}</p>
-              <p className="text-xs" style={{ color: "#E8450A" }}>{usuarioAtual.perfil}</p>
+              <p className="text-xs font-semibold truncate text-white">{usuarioAtual.nome}</p>
+              <p className="text-xs capitalize" style={{ color: "#7ecece" }}>{usuarioAtual.perfil}</p>
             </div>
-            <button onClick={handleLogout} title="Sair" className="text-xs px-2 py-1 rounded-lg font-semibold" style={{ color: "#b84a00", background: "rgba(232,69,10,0.1)" }}>Sair</button>
+            <button onClick={handleLogout} title="Sair" className="text-xs px-2 py-1 rounded font-semibold" style={{ color: "#7ecece", background: "rgba(126,206,206,0.1)" }}>Sair</button>
           </div>
         </div>
       </aside>
 
-      {/* Main */}
+      {/* MAIN */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex items-center justify-between px-6 py-4 bg-white border-b" style={{ borderColor: "#f0f0f0" }}>
-          <div>
-            <h1 className="font-black text-gray-800 text-lg">
-              {navItems.find(n => n.id === tela)?.icon} {navItems.find(n => n.id === tela)?.label}
+        {/* Header — petróleo com linha laranja embaixo, igual imagem 3 */}
+        <header className="flex items-center justify-between px-6 py-0" style={{ background: "#1a4a4a", borderBottom: "3px solid #E8450A", minHeight: 52 }}>
+          <div className="flex items-center gap-3">
+            <div style={{ width: 3, height: 22, background: "#E8450A", borderRadius: 2 }} />
+            <h1 className="font-bold text-sm text-white">
+              {navItems.find(n => n.id === tela)?.label}
             </h1>
-            <p className="text-xs text-gray-400">Sistema de Controle — Desembaraço Extemporâneo DTE/AM</p>
+            <span className="text-xs hidden sm:block" style={{ color: "rgba(255,255,255,0.4)" }}>— Desembaraço Extemporâneo DTE/AM</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400 hidden sm:block">06/03/2026</span>
+            <span className="text-xs hidden sm:block" style={{ color: "rgba(255,255,255,0.5)" }}>{new Date().toLocaleDateString("pt-BR")}</span>
             {criticas > 0 && (
               <span className="text-xs font-bold px-3 py-1 rounded-full text-white" style={{ background: "#c0392b" }}>🔴 {criticas} crítica(s)</span>
             )}
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto p-6" style={{ background: "#ffffff" }}>
+
+        <div className="flex-1 overflow-y-auto p-6" style={{ background: "#edf5f5" }}>
           {tela === "dashboard" && <Dashboard notas={notas} onVerNota={n => setNotaSelecionada(n)} onIrParaPainel={() => setTela("notas")} />}
-          {tela === "notas" && <PainelNotas notas={notas} onVerNota={n => setNotaSelecionada(n)} onImportar={handleImportar} ultimaImportacao={ultimaImportacao} />}
+          {tela === "notas" && <PainelNotas notas={notas} onVerNota={n => setNotaSelecionada(n)} onImportar={handleImportar} ultimaImportacao={ultimaImportacao} empresas={empresas} />}
           {tela === "relatorios" && <Relatorios notas={notas} />}
           {tela === "configuracoes" && <Configuracoes usuarios={usuarios} onSalvarUsuario={handleSalvarUsuario} onEditarUsuario={handleEditarUsuario} onExcluirUsuario={handleExcluirUsuario} logoUrl={logoUrl} onSalvarLogo={handleSalvarLogo} empresas={empresas} onSalvarEmpresa={handleSalvarEmpresa} perfilAtual={usuarioAtual.perfil} />}
         </div>
