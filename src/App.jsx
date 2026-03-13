@@ -2056,12 +2056,96 @@ function ModalConfirmImport({ notasParaImportar, empresas, onConfirmar, onCancel
 // ============================================================
 // TELA: CONFIGURAÇÕES
 // ============================================================
+// ============================================================
+// MODAL ALTERAR SENHA
+// ============================================================
+function ModalAlterarSenha({ onClose }) {
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confirmar, setConfirmar] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState(null); // { tipo: "ok"|"erro", texto }
+
+  const salvar = async () => {
+    if (novaSenha.length < 6) { setMsg({ tipo: "erro", texto: "A nova senha deve ter ao menos 6 caracteres." }); return; }
+    if (novaSenha !== confirmar) { setMsg({ tipo: "erro", texto: "As senhas não coincidem." }); return; }
+    setLoading(true);
+    setMsg(null);
+    try {
+      // Reautentica com senha atual para validar
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: user.email, password: senhaAtual });
+      if (reAuthError) { setMsg({ tipo: "erro", texto: "Senha atual incorreta." }); setLoading(false); return; }
+      // Atualiza senha
+      const { error } = await supabase.auth.updateUser({ password: novaSenha });
+      if (error) { setMsg({ tipo: "erro", texto: "Erro ao alterar senha: " + error.message }); setLoading(false); return; }
+      setMsg({ tipo: "ok", texto: "✅ Senha alterada com sucesso!" });
+      setTimeout(() => onClose(), 1800);
+    } catch (e) {
+      setMsg({ tipo: "erro", texto: "Erro inesperado: " + e.message });
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm m-4">
+        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "#f0f0f0" }}>
+          <div>
+            <h2 className="font-bold text-gray-800">🔒 Alterar Senha</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Defina uma nova senha para sua conta</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl font-light">×</button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase">Senha Atual</label>
+            <input type="password" value={senhaAtual} onChange={e => setSenhaAtual(e.target.value)}
+              placeholder="Digite sua senha atual"
+              className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor: "#e5e7eb" }} />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase">Nova Senha</label>
+            <input type="password" value={novaSenha} onChange={e => setNovaSenha(e.target.value)}
+              placeholder="Mínimo 6 caracteres"
+              className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor: "#e5e7eb" }} />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase">Confirmar Nova Senha</label>
+            <input type="password" value={confirmar} onChange={e => setConfirmar(e.target.value)}
+              placeholder="Repita a nova senha"
+              className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor: "#e5e7eb" }} />
+          </div>
+          {msg && (
+            <div className="p-3 rounded-lg text-sm font-medium" style={{
+              background: msg.tipo === "ok" ? "#f0fdf4" : "#fff0f0",
+              color: msg.tipo === "ok" ? "#2d6a4f" : "#c0392b",
+              border: `1px solid ${msg.tipo === "ok" ? "#d1fae5" : "#ffc7c7"}`
+            }}>
+              {msg.texto}
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end gap-3 p-5 border-t" style={{ borderColor: "#f0f0f0" }}>
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border text-sm text-gray-600" style={{ borderColor: "#e5e7eb" }}>Cancelar</button>
+          <button onClick={salvar} disabled={loading || !senhaAtual || !novaSenha || !confirmar}
+            className="px-6 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+            style={{ background: "#1a4a4a" }}>
+            {loading ? "Salvando..." : "Salvar Nova Senha"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Configuracoes({ usuarios, onSalvarUsuario, onEditarUsuario, onExcluirUsuario, logoUrl, onSalvarLogo, empresas, onSalvarEmpresa, perfilAtual }) {
   const [novoNome, setNovoNome] = useState("");
   const [novoEmail, setNovoEmail] = useState("");
   const [novoPerfil, setNovoPerfil] = useState("operador");
   const [modalEmpresa, setModalEmpresa] = useState(null);
   const [modalUsuario, setModalUsuario] = useState(null); // null = fechado, {id,...} = editar
+  const [modalSenha, setModalSenha] = useState(false);
 
   const handleLogo = (e) => {
     const file = e.target.files[0];
@@ -2073,6 +2157,22 @@ function Configuracoes({ usuarios, onSalvarUsuario, onEditarUsuario, onExcluirUs
 
   return (
     <div className="space-y-6">
+
+      {/* Minha Conta */}
+      <div className="rounded-2xl border p-5" style={{ borderColor: "#f0f0f0" }}>
+        <h3 className="font-bold text-gray-700 mb-1 text-sm uppercase tracking-wide">Minha Conta</h3>
+        <p className="text-xs text-gray-400 mb-4">Gerencie as credenciais de acesso da sua conta.</p>
+        <button onClick={() => setModalSenha(true)}
+          className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+          style={{ background: "#1a4a4a" }}>
+          🔒 Alterar Minha Senha
+        </button>
+        <p className="text-xs text-gray-400 mt-3">
+          Caso esqueça sua senha, peça ao administrador do sistema para redefini-la.
+        </p>
+      </div>
+
+      {modalSenha && <ModalAlterarSenha onClose={() => setModalSenha(false)} />}
 
       {/* Logo */}
       <div className="rounded-2xl border p-5" style={{ borderColor: "#f0f0f0" }}>
