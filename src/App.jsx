@@ -34,7 +34,7 @@ function exportarExcel(filtradas, empresas, periodo) {
       "ICMS Antecipado (R$)": num(n.icmsAntecipado),
       "Multa (R$)": num(n.multa),
       "Juros (R$)": num(n.juros),
-      "Total Custos (R$)": num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros),
+      "Total Custos (R$)": num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa10pct||0)+num(n.multa)+num(n.juros),
       "Observações": n.obs || "",
     }));
     const ws1 = XLSX.utils.json_to_sheet(dadosCompletos);
@@ -52,7 +52,7 @@ function exportarExcel(filtradas, empresas, periodo) {
       else if (num(n.qtdeDias) >= 25) empMap[emp].atencao++;
       else empMap[emp].ok++;
       empMap[emp].valorTotal += num(n.valor);
-      const custo = num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros);
+      const custo = num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa10pct||0)+num(n.multa)+num(n.juros);
       empMap[emp].custoTotal += custo;
       empMap[emp].taxas += num(n.taxaReanalise)+num(n.taxaDesembaraco);
       empMap[emp].icms += num(n.icmsAntecipado);
@@ -91,7 +91,7 @@ function exportarExcel(filtradas, empresas, periodo) {
     ];
     const analisePrazos = faixas.map(f => {
       const notas = filtradas.filter(n => num(n.qtdeDias) >= f.min && num(n.qtdeDias) <= f.max);
-      const custos = notas.reduce((s,n) => s+num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros), 0);
+      const custos = notas.reduce((s,n) => s+num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa10pct||0)+num(n.multa)+num(n.juros), 0);
       return {
         "Faixa de Prazo": f.label,
         "Qtde Notas": notas.length,
@@ -138,7 +138,7 @@ function exportarExcel(filtradas, empresas, periodo) {
       if (!fornMap[k]) fornMap[k] = { qtde:0, valor:0, custos:0, diasMax:0 };
       fornMap[k].qtde++;
       fornMap[k].valor += num(n.valor);
-      fornMap[k].custos += num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros);
+      fornMap[k].custos += num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa10pct||0)+num(n.multa)+num(n.juros);
       if (num(n.qtdeDias) > fornMap[k].diasMax) fornMap[k].diasMax = num(n.qtdeDias);
     });
     const rankingForn = Object.entries(fornMap)
@@ -466,7 +466,7 @@ function exportarPDF(filtradas, empresas, periodo) {
       if (!empMap[nm]) empMap[nm] = { qtde:0, criticas:0, custos:0 };
       empMap[nm].qtde++;
       if (num(n.qtdeDias) >= 60) empMap[nm].criticas++;
-      empMap[nm].custos += num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros);
+      empMap[nm].custos += num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa10pct||0)+num(n.multa)+num(n.juros);
     });
     const empNomes = Object.keys(empMap);
     const empQtdes = empNomes.map(e => empMap[e].qtde);
@@ -502,7 +502,7 @@ function exportarPDF(filtradas, empresas, periodo) {
       const k = n.razaoSocial || n.fornecedor || "Desconhecido";
       if (!fornMap[k]) fornMap[k] = { qtde:0, custos:0, diasMax:0 };
       fornMap[k].qtde++;
-      fornMap[k].custos += num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros);
+      fornMap[k].custos += num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa10pct||0)+num(n.multa)+num(n.juros);
       if (num(n.qtdeDias) > fornMap[k].diasMax) fornMap[k].diasMax = num(n.qtdeDias);
     });
     Object.entries(fornMap).sort((a,b) => b[1].custos - a[1].custos).slice(0,10).forEach(([nome, d], i) => {
@@ -550,7 +550,7 @@ function exportarPDF(filtradas, empresas, periodo) {
         drawTableHeader();
       }
       if (i % 2 === 0) { doc.setFillColor(244,250,250); doc.rect(MARGIN, ly-3, CONTENT_W, 7, "F"); }
-      const custo = num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa)+num(n.juros);
+      const custo = num(n.taxaReanalise)+num(n.taxaDesembaraco)+num(n.icmsAntecipado)+num(n.multa10pct||0)+num(n.multa)+num(n.juros);
       const isCrit = num(n.qtdeDias) >= 60;
       doc.setFont("helvetica","normal"); doc.setFontSize(6.5); doc.setTextColor(50,70,70);
       doc.text(nomeEmp(n.empresa).slice(0,18), lCols[0], ly+2);
@@ -616,39 +616,39 @@ function diffDias(dataEmissao) {
 
 const NOTAS_INICIAIS = [
   // FILIAL 02 - MANAUS
-  { id: "1", empresa: "filial02", fornecedor: "02.677.045/0002-01", razaoSocial: "HORUS TELECOMUNICACOES LTDA", numNota: "184028", cfop: "6102", dtEmissao: "07/01/2026", dtApresentacao: "-", chave: "52260102677045000201552110001840281230738747", valor: 3623.50, qtdeDias: 58, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "2", empresa: "filial02", fornecedor: "02.677.045/0002-01", razaoSocial: "HORUS TELECOMUNICACOES LTDA", numNota: "184154", cfop: "6102", dtEmissao: "12/01/2026", dtApresentacao: "-", chave: "52260102677045000201552110001841541263066581", valor: 6197.64, qtdeDias: 53, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "3", empresa: "filial02", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5327", cfop: "6554", dtEmissao: "12/01/2026", dtApresentacao: "-", chave: "52260107791042000137550010000053271163320077", valor: 240000.00, qtdeDias: 53, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "4", empresa: "filial02", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5332", cfop: "6554", dtEmissao: "19/01/2026", dtApresentacao: "-", chave: "52260107791042000137550010000053321351857147", valor: 97000.00, qtdeDias: 46, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "5", empresa: "filial02", fornecedor: "26.502.220/0001-07", razaoSocial: "Engecomp Consultoria e Locacao de Sistemas Ltda", numNota: "2064", cfop: "6908", dtEmissao: "19/01/2026", dtApresentacao: "-", chave: "35260126502220000107550010000020641140106616", valor: 1200.00, qtdeDias: 46, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "6", empresa: "filial02", fornecedor: "01.816.875/0001-29", razaoSocial: "AJEL MATERIAIS ELETRICOS LTDA", numNota: "1045837", cfop: "6110", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "52260101816875000129550010010458371541541030", valor: 1190.05, qtdeDias: 35, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "7", empresa: "filial02", fornecedor: "35.784.562/0001-58", razaoSocial: "ADR COMERCIO DE EQUIPAMENTOS DE INFORMATICA EIRELI", numNota: "13254", cfop: "6102", dtEmissao: "09/02/2026", dtApresentacao: "-", chave: "35260235784562000158550010000132541666574003", valor: 6130.00, qtdeDias: 25, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "8", empresa: "filial02", fornecedor: "13.087.023/0001-27", razaoSocial: "BRASFORMER PRODUTOS ELETRICOS LTDA", numNota: "10154", cfop: "6109", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "35260213087023000127550010000101541201141316", valor: 3745.10, qtdeDias: 14, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "1", empresa: "filial02", fornecedor: "02.677.045/0002-01", razaoSocial: "HORUS TELECOMUNICACOES LTDA", numNota: "184028", cfop: "6102", dtEmissao: "07/01/2026", dtApresentacao: "-", chave: "52260102677045000201552110001840281230738747", valor: 3623.50, qtdeDias: 58, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "2", empresa: "filial02", fornecedor: "02.677.045/0002-01", razaoSocial: "HORUS TELECOMUNICACOES LTDA", numNota: "184154", cfop: "6102", dtEmissao: "12/01/2026", dtApresentacao: "-", chave: "52260102677045000201552110001841541263066581", valor: 6197.64, qtdeDias: 53, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "3", empresa: "filial02", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5327", cfop: "6554", dtEmissao: "12/01/2026", dtApresentacao: "-", chave: "52260107791042000137550010000053271163320077", valor: 240000.00, qtdeDias: 53, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "4", empresa: "filial02", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5332", cfop: "6554", dtEmissao: "19/01/2026", dtApresentacao: "-", chave: "52260107791042000137550010000053321351857147", valor: 97000.00, qtdeDias: 46, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "5", empresa: "filial02", fornecedor: "26.502.220/0001-07", razaoSocial: "Engecomp Consultoria e Locacao de Sistemas Ltda", numNota: "2064", cfop: "6908", dtEmissao: "19/01/2026", dtApresentacao: "-", chave: "35260126502220000107550010000020641140106616", valor: 1200.00, qtdeDias: 46, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "6", empresa: "filial02", fornecedor: "01.816.875/0001-29", razaoSocial: "AJEL MATERIAIS ELETRICOS LTDA", numNota: "1045837", cfop: "6110", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "52260101816875000129550010010458371541541030", valor: 1190.05, qtdeDias: 35, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "7", empresa: "filial02", fornecedor: "35.784.562/0001-58", razaoSocial: "ADR COMERCIO DE EQUIPAMENTOS DE INFORMATICA EIRELI", numNota: "13254", cfop: "6102", dtEmissao: "09/02/2026", dtApresentacao: "-", chave: "35260235784562000158550010000132541666574003", valor: 6130.00, qtdeDias: 25, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "8", empresa: "filial02", fornecedor: "13.087.023/0001-27", razaoSocial: "BRASFORMER PRODUTOS ELETRICOS LTDA", numNota: "10154", cfop: "6109", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "35260213087023000127550010000101541201141316", valor: 3745.10, qtdeDias: 14, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
   // FILIAL 13 - MLA
-  { id: "9", empresa: "filial13", fornecedor: "07.791.042/0007-22", razaoSocial: "ENERWATT ENGENHARIA, INDUSTRIA E COMERCIO - EIRELI", numNota: "1702", cfop: "6151", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "35260107791042000722550010000017021171724335", valor: 4272.61, qtdeDias: 35, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "10", empresa: "filial13", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5364", cfop: "6554", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "52260207791042000137550010000053641305471689", valor: 4509.90, qtdeDias: 18, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "11", empresa: "filial13", fornecedor: "02.341.470/0001-44", razaoSocial: "Boa Vista Energia S/A", numNota: "1017", cfop: "6915", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "14260202341470000144550020000010171311612194", valor: 99610.55, qtdeDias: 14, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "12", empresa: "filial13", fornecedor: "02.341.470/0001-44", razaoSocial: "Boa Vista Energia S/A", numNota: "1016", cfop: "6915", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "14260202341470000144550020000010161341856914", valor: 172410.30, qtdeDias: 14, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "9", empresa: "filial13", fornecedor: "07.791.042/0007-22", razaoSocial: "ENERWATT ENGENHARIA, INDUSTRIA E COMERCIO - EIRELI", numNota: "1702", cfop: "6151", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "35260107791042000722550010000017021171724335", valor: 4272.61, qtdeDias: 35, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "10", empresa: "filial13", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5364", cfop: "6554", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "52260207791042000137550010000053641305471689", valor: 4509.90, qtdeDias: 18, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "11", empresa: "filial13", fornecedor: "02.341.470/0001-44", razaoSocial: "Boa Vista Energia S/A", numNota: "1017", cfop: "6915", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "14260202341470000144550020000010171311612194", valor: 99610.55, qtdeDias: 14, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "12", empresa: "filial13", fornecedor: "02.341.470/0001-44", razaoSocial: "Boa Vista Energia S/A", numNota: "1016", cfop: "6915", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "14260202341470000144550020000010161341856914", valor: 172410.30, qtdeDias: 14, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
   // LINHAS DO NORTE
-  { id: "13", empresa: "linhasnorte", fornecedor: "10.159.093/0002-36", razaoSocial: "VIMEZER FORN DE SERV LTDA", numNota: "886481", cfop: "6403", dtEmissao: "17/01/2026", dtApresentacao: "-", chave: "14260110159093000236550010008864811598662666", valor: 9030.00, qtdeDias: 48, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "14", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "939", cfop: "6103", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260101200900000145550010000009391300001762", valor: 7357.00, qtdeDias: 44, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "15", empresa: "linhasnorte", fornecedor: "02.905.133/0001-32", razaoSocial: "CABEXPRESS IND.COM.DE CABOS ELET.", numNota: "43738", cfop: "6101", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "35260102905133000132550010000437381888458950", valor: 6762.24, qtdeDias: 44, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "16", empresa: "linhasnorte", fornecedor: "09.296.337/0001-62", razaoSocial: "C. COMERCIO CONSTRUCAO SERVICOS LTDA", numNota: "2816", cfop: "6102", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260109296337000162550010000028161380042518", valor: 1600.00, qtdeDias: 44, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "17", empresa: "linhasnorte", fornecedor: "09.296.337/0001-62", razaoSocial: "C. COMERCIO CONSTRUCAO SERVICOS LTDA", numNota: "2815", cfop: "6102", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260109296337000162550010000028151518643526", valor: 800.00, qtdeDias: 44, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "18", empresa: "linhasnorte", fornecedor: "10.159.093/0002-36", razaoSocial: "VIMEZER FORN DE SERV LTDA", numNota: "887052", cfop: "6403", dtEmissao: "26/01/2026", dtApresentacao: "-", chave: "14260110159093000236550010008870521446156556", valor: 1210.00, qtdeDias: 39, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "19", empresa: "linhasnorte", fornecedor: "62.384.763/0001-30", razaoSocial: "CIVITELLA E CIA LTDA", numNota: "18531", cfop: "6101", dtEmissao: "26/01/2026", dtApresentacao: "-", chave: "35260162384763000130550000000185311023587016", valor: 14031.89, qtdeDias: 39, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "20", empresa: "linhasnorte", fornecedor: "10.159.093/0007-40", razaoSocial: "VIMEZER FORNC. DE SERV. LTDA", numNota: "2259", cfop: "6403", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "14260110159093000740550010000022591912085940", valor: 1055.00, qtdeDias: 35, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "21", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "954", cfop: "6103", dtEmissao: "04/02/2026", dtApresentacao: "-", chave: "14260201200900000145550010000009541300001916", valor: 11023.00, qtdeDias: 30, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "22", empresa: "linhasnorte", fornecedor: "05.059.252/0001-00", razaoSocial: "MOURAO E LIRA LTDA - EPP", numNota: "27692", cfop: "6102", dtEmissao: "04/02/2026", dtApresentacao: "-", chave: "14260205059252000100550010000276921095977758", valor: 1894.60, qtdeDias: 30, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "23", empresa: "linhasnorte", fornecedor: "19.215.087/0002-23", razaoSocial: "MARTINS & SA LTDA ME", numNota: "2109", cfop: "6102", dtEmissao: "05/02/2026", dtApresentacao: "-", chave: "14260219215087000223550010000021091182559020", valor: 7134.00, qtdeDias: 29, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "24", empresa: "linhasnorte", fornecedor: "10.159.093/0001-55", razaoSocial: "VIMEZER FORN. DE SERV. LTDA", numNota: "193912", cfop: "6403", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260210159093000155550010001939121384724670", valor: 75.00, qtdeDias: 23, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "25", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4125", cfop: "6102", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041251344287275", valor: 112.00, qtdeDias: 23, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "26", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4124", cfop: "6102", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041241335350698", valor: 1073.00, qtdeDias: 23, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "27", empresa: "linhasnorte", fornecedor: "10.159.093/0007-40", razaoSocial: "VIMEZER FORNC. DE SERV. LTDA", numNota: "2614", cfop: "6403", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "14260210159093000740550010000026141073344889", valor: 1783.00, qtdeDias: 18, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "28", empresa: "linhasnorte", fornecedor: "19.215.087/0002-23", razaoSocial: "MARTINS & SA LTDA ME", numNota: "2142", cfop: "6102", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "14260219215087000223550010000021421064331406", valor: 3928.00, qtdeDias: 18, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "29", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "960", cfop: "6103", dtEmissao: "18/02/2026", dtApresentacao: "-", chave: "14260201200900000145550010000009601300001972", valor: 12331.00, qtdeDias: 16, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "30", empresa: "linhasnorte", fornecedor: "01.867.060/0001-79", razaoSocial: "M. J. M. DA SILVA", numNota: "17514", cfop: "6101", dtEmissao: "18/02/2026", dtApresentacao: "-", chave: "14260201867060000179550010000175141004126555", valor: 400.00, qtdeDias: 16, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "31", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4139", cfop: "6102", dtEmissao: "24/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041391996657711", valor: 1960.00, qtdeDias: 10, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "13", empresa: "linhasnorte", fornecedor: "10.159.093/0002-36", razaoSocial: "VIMEZER FORN DE SERV LTDA", numNota: "886481", cfop: "6403", dtEmissao: "17/01/2026", dtApresentacao: "-", chave: "14260110159093000236550010008864811598662666", valor: 9030.00, qtdeDias: 48, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "14", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "939", cfop: "6103", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260101200900000145550010000009391300001762", valor: 7357.00, qtdeDias: 44, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "15", empresa: "linhasnorte", fornecedor: "02.905.133/0001-32", razaoSocial: "CABEXPRESS IND.COM.DE CABOS ELET.", numNota: "43738", cfop: "6101", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "35260102905133000132550010000437381888458950", valor: 6762.24, qtdeDias: 44, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "16", empresa: "linhasnorte", fornecedor: "09.296.337/0001-62", razaoSocial: "C. COMERCIO CONSTRUCAO SERVICOS LTDA", numNota: "2816", cfop: "6102", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260109296337000162550010000028161380042518", valor: 1600.00, qtdeDias: 44, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "17", empresa: "linhasnorte", fornecedor: "09.296.337/0001-62", razaoSocial: "C. COMERCIO CONSTRUCAO SERVICOS LTDA", numNota: "2815", cfop: "6102", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260109296337000162550010000028151518643526", valor: 800.00, qtdeDias: 44, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "18", empresa: "linhasnorte", fornecedor: "10.159.093/0002-36", razaoSocial: "VIMEZER FORN DE SERV LTDA", numNota: "887052", cfop: "6403", dtEmissao: "26/01/2026", dtApresentacao: "-", chave: "14260110159093000236550010008870521446156556", valor: 1210.00, qtdeDias: 39, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "19", empresa: "linhasnorte", fornecedor: "62.384.763/0001-30", razaoSocial: "CIVITELLA E CIA LTDA", numNota: "18531", cfop: "6101", dtEmissao: "26/01/2026", dtApresentacao: "-", chave: "35260162384763000130550000000185311023587016", valor: 14031.89, qtdeDias: 39, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "20", empresa: "linhasnorte", fornecedor: "10.159.093/0007-40", razaoSocial: "VIMEZER FORNC. DE SERV. LTDA", numNota: "2259", cfop: "6403", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "14260110159093000740550010000022591912085940", valor: 1055.00, qtdeDias: 35, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "21", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "954", cfop: "6103", dtEmissao: "04/02/2026", dtApresentacao: "-", chave: "14260201200900000145550010000009541300001916", valor: 11023.00, qtdeDias: 30, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "22", empresa: "linhasnorte", fornecedor: "05.059.252/0001-00", razaoSocial: "MOURAO E LIRA LTDA - EPP", numNota: "27692", cfop: "6102", dtEmissao: "04/02/2026", dtApresentacao: "-", chave: "14260205059252000100550010000276921095977758", valor: 1894.60, qtdeDias: 30, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "23", empresa: "linhasnorte", fornecedor: "19.215.087/0002-23", razaoSocial: "MARTINS & SA LTDA ME", numNota: "2109", cfop: "6102", dtEmissao: "05/02/2026", dtApresentacao: "-", chave: "14260219215087000223550010000021091182559020", valor: 7134.00, qtdeDias: 29, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "24", empresa: "linhasnorte", fornecedor: "10.159.093/0001-55", razaoSocial: "VIMEZER FORN. DE SERV. LTDA", numNota: "193912", cfop: "6403", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260210159093000155550010001939121384724670", valor: 75.00, qtdeDias: 23, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "25", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4125", cfop: "6102", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041251344287275", valor: 112.00, qtdeDias: 23, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "26", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4124", cfop: "6102", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041241335350698", valor: 1073.00, qtdeDias: 23, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "27", empresa: "linhasnorte", fornecedor: "10.159.093/0007-40", razaoSocial: "VIMEZER FORNC. DE SERV. LTDA", numNota: "2614", cfop: "6403", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "14260210159093000740550010000026141073344889", valor: 1783.00, qtdeDias: 18, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "28", empresa: "linhasnorte", fornecedor: "19.215.087/0002-23", razaoSocial: "MARTINS & SA LTDA ME", numNota: "2142", cfop: "6102", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "14260219215087000223550010000021421064331406", valor: 3928.00, qtdeDias: 18, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "29", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "960", cfop: "6103", dtEmissao: "18/02/2026", dtApresentacao: "-", chave: "14260201200900000145550010000009601300001972", valor: 12331.00, qtdeDias: 16, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "30", empresa: "linhasnorte", fornecedor: "01.867.060/0001-79", razaoSocial: "M. J. M. DA SILVA", numNota: "17514", cfop: "6101", dtEmissao: "18/02/2026", dtApresentacao: "-", chave: "14260201867060000179550010000175141004126555", valor: 400.00, qtdeDias: 16, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "31", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4139", cfop: "6102", dtEmissao: "24/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041391996657711", valor: 1960.00, qtdeDias: 10, status: "Identificada", centroCusto: "", finalidade: "", responsavel: "", noRM: null, taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
 ];
 
 // Usuários carregados do Supabase dinamicamente
@@ -967,29 +967,105 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
           )}
 
           {activeTab === "financeiro" && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 p-3 rounded-xl text-sm" style={{ background: "#f8f9fa" }}>
-                <p className="text-xs text-gray-500 mb-1">Taxa de desembaraço é fixa. Os demais valores são informados pelo DTE e registrados manualmente.</p>
+            <div className="space-y-4">
+              <div className="p-3 rounded-xl text-xs text-gray-500" style={{ background: "#f8f9fa" }}>
+                Taxa de desembaraço é fixa (R$ 50,00). Demais valores informados pelo DTE e registrados manualmente.
               </div>
-              {[
-                { k: "taxaReanalise", label: "Taxa de Reanálise (R$)" },
-                { k: "taxaDesembaraco", label: "Taxa de Desembaraço (R$ 50,00 fixo)" },
-                { k: "icmsAntecipado", label: "ICMS Antecipado (R$)" },
-                { k: "multa", label: "Multa (R$)" },
-                { k: "juros", label: "Juros (R$)" },
-              ].map(({ k, label }) => (
-                <div key={k}>
-                  <label className="text-xs font-semibold text-gray-500 uppercase">{label}</label>
-                  <input type="number" step="0.01" value={form[k] || ""} onChange={e => set(k, parseFloat(e.target.value) || 0)}
-                    placeholder="0,00"
-                    className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+
+              {/* Taxa de Reanálise */}
+              <div className="rounded-xl p-4" style={{ background: "#f0f8f8", border: "1px solid #d0e8e8" }}>
+                <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "#1a4a4a" }}>Taxa de Reanálise</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase">Valor (R$)</label>
+                    <input type="number" step="0.01" value={form.taxaReanalise || ""} onChange={e => set("taxaReanalise", parseFloat(e.target.value) || 0)}
+                      placeholder="0,00" className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase">Vencimento</label>
+                    <input type="text" value={form.dtVencReanalise || ""} onChange={e => { let v = e.target.value.replace(/\D/g,""); if(v.length>=3) v=v.slice(0,2)+"/"+v.slice(2); if(v.length>=6) v=v.slice(0,5)+"/"+v.slice(5); set("dtVencReanalise", v.slice(0,10)); }}
+                      placeholder="DD/MM/AAAA" maxLength={10} className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: form.dtVencReanalise?.length===10 ? "#E8450A" : "#e5e7eb" }} />
+                  </div>
                 </div>
-              ))}
-              <div className="col-span-2 p-4 rounded-xl" style={{ background: "#f0f8f8", border: "1px solid #ffd6b8" }}>
-                <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Total de Custos</p>
-                <p className="text-2xl font-bold" style={{ color: "#E8450A" }}>
-                  {fmtMoeda((form.taxaReanalise || 0) + (form.taxaDesembaraco || 0) + (form.icmsAntecipado || 0) + (form.multa || 0) + (form.juros || 0))}
-                </p>
+              </div>
+
+              {/* Taxa de Desembaraço */}
+              <div className="rounded-xl p-4" style={{ background: "#f0f8f8", border: "1px solid #d0e8e8" }}>
+                <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "#1a4a4a" }}>Taxa de Desembaraço <span className="font-normal text-gray-400">(R$ 50,00 fixo)</span></p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase">Valor (R$)</label>
+                    <input type="number" step="0.01" value={form.taxaDesembaraco || ""} onChange={e => set("taxaDesembaraco", parseFloat(e.target.value) || 0)}
+                      placeholder="50,00" className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase">Vencimento</label>
+                    <input type="text" value={form.dtVencDesembaraco || ""} onChange={e => { let v = e.target.value.replace(/\D/g,""); if(v.length>=3) v=v.slice(0,2)+"/"+v.slice(2); if(v.length>=6) v=v.slice(0,5)+"/"+v.slice(5); set("dtVencDesembaraco", v.slice(0,10)); }}
+                      placeholder="DD/MM/AAAA" maxLength={10} className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: form.dtVencDesembaraco?.length===10 ? "#E8450A" : "#e5e7eb" }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* ICMS Antecipado */}
+              <div className="rounded-xl p-4" style={{ background: "#f0f8f8", border: "1px solid #d0e8e8" }}>
+                <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "#1a4a4a" }}>ICMS Antecipado <span className="font-normal text-gray-400">(notas abaixo de R$ 25k)</span></p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase">Valor (R$)</label>
+                    <input type="number" step="0.01" value={form.icmsAntecipado || ""} onChange={e => set("icmsAntecipado", parseFloat(e.target.value) || 0)}
+                      placeholder="0,00" className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase">Vencimento</label>
+                    <input type="text" value={form.dtVencIcms || ""} onChange={e => { let v = e.target.value.replace(/\D/g,""); if(v.length>=3) v=v.slice(0,2)+"/"+v.slice(2); if(v.length>=6) v=v.slice(0,5)+"/"+v.slice(5); set("dtVencIcms", v.slice(0,10)); }}
+                      placeholder="DD/MM/AAAA" maxLength={10} className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: form.dtVencIcms?.length===10 ? "#E8450A" : "#e5e7eb" }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Multa 10% + Multa adicional + Juros — sem vencimento */}
+              <div className="rounded-xl p-4" style={{ background: "#fff8f5", border: "1px solid #ffd6b8" }}>
+                <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "#E8450A" }}>Multas e Juros</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase">Multa 10% <span className="text-purple-500">(acima R$25k)</span></label>
+                    <input type="number" step="0.01" value={form.multa10pct || ""} onChange={e => set("multa10pct", parseFloat(e.target.value) || 0)}
+                      placeholder="0,00" className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+                    {form.valor > 25000 && (form.multa10pct === 0 || !form.multa10pct) && (
+                      <p className="text-xs mt-1 font-semibold" style={{ color: "#7e3af2" }}>Sugerido: {fmtMoeda(form.valor * 0.10)}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase">Multa Adicional (R$)</label>
+                    <input type="number" step="0.01" value={form.multa || ""} onChange={e => set("multa", parseFloat(e.target.value) || 0)}
+                      placeholder="0,00" className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase">Juros (R$)</label>
+                    <input type="number" step="0.01" value={form.juros || ""} onChange={e => set("juros", parseFloat(e.target.value) || 0)}
+                      placeholder="0,00" className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Total */}
+              <div className="p-4 rounded-xl" style={{ background: "#1a4a4a" }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#7ecece" }}>Total de Custos</p>
+                    <p className="text-2xl font-black text-white mt-1">
+                      {fmtMoeda((form.taxaReanalise||0)+(form.taxaDesembaraco||0)+(form.icmsAntecipado||0)+(form.multa10pct||0)+(form.multa||0)+(form.juros||0))}
+                    </p>
+                  </div>
+                  <div className="text-right space-y-0.5">
+                    {form.taxaReanalise > 0 && <p className="text-xs" style={{ color: "#7ecece" }}>Reanálise: {fmtMoeda(form.taxaReanalise)}</p>}
+                    {form.taxaDesembaraco > 0 && <p className="text-xs" style={{ color: "#7ecece" }}>Desembaraço: {fmtMoeda(form.taxaDesembaraco)}</p>}
+                    {form.icmsAntecipado > 0 && <p className="text-xs" style={{ color: "#7ecece" }}>ICMS: {fmtMoeda(form.icmsAntecipado)}</p>}
+                    {form.multa10pct > 0 && <p className="text-xs" style={{ color: "#f0a500" }}>Multa 10%: {fmtMoeda(form.multa10pct)}</p>}
+                    {form.multa > 0 && <p className="text-xs" style={{ color: "#f0a500" }}>Multa Adic.: {fmtMoeda(form.multa)}</p>}
+                    {form.juros > 0 && <p className="text-xs" style={{ color: "#f0a500" }}>Juros: {fmtMoeda(form.juros)}</p>}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1099,7 +1175,7 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
   const acima25k = ativas.filter(n => n.valor > 25000);
   const aguardPag = ativas.filter(n => n.status === "Aguardando Pagamento");
   const desembaracadas = notas.filter(n => n.status === "Desembaraçada");
-  const totalCustos = ativas.reduce((s, n) => s + (n.taxaReanalise || 0) + (n.taxaDesembaraco || 0) + (n.icmsAntecipado || 0) + (n.multa || 0) + (n.juros || 0), 0);
+  const totalCustos = ativas.reduce((s, n) => s + (n.taxaReanalise || 0) + (n.taxaDesembaraco || 0) + (n.icmsAntecipado || 0) + (n.multa10pct || 0) + (n.multa || 0) + (n.juros || 0), 0);
 
   const porEmpresa = EMPRESAS.map(e => ({
     ...e,
@@ -1206,7 +1282,7 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
 // ============================================================
 function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas }) {
   const [filtros, setFiltros] = useState({
-    empresa: "", status: "", busca: "", dias: "",
+    empresa: "", status: "", busca: "", dias: "", valor: "",
     tipoData: "emissao", dtDe: "", dtAte: ""
   });
   const [mostrarImport, setMostrarImport] = useState(false);
@@ -1225,6 +1301,8 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
     if (filtros.dias === "critico" && n.qtdeDias < 60) return false;
     if (filtros.dias === "atencao" && (n.qtdeDias < 25 || n.qtdeDias >= 60)) return false;
     if (filtros.dias === "ok" && n.qtdeDias >= 25) return false;
+    if (filtros.valor === "acima25k" && n.valor <= 25000) return false;
+    if (filtros.valor === "ate25k" && n.valor > 25000) return false;
     if (filtros.busca) {
       const b = filtros.busca.toLowerCase();
       if (!n.razaoSocial.toLowerCase().includes(b) && !n.numNota.includes(b) && !n.fornecedor.includes(b) && !n.chave.includes(b)) return false;
@@ -1252,8 +1330,8 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
     setMostrarImport(false);
   };
 
-  const limparFiltros = () => setFiltros({ empresa: "", status: "", busca: "", dias: "", tipoData: "emissao", dtDe: "", dtAte: "" });
-  const temFiltroAtivo = filtros.empresa || filtros.status || filtros.busca || filtros.dias || filtros.dtDe || filtros.dtAte;
+  const limparFiltros = () => setFiltros({ empresa: "", status: "", busca: "", dias: "", valor: "", tipoData: "emissao", dtDe: "", dtAte: "" });
+  const temFiltroAtivo = filtros.empresa || filtros.status || filtros.busca || filtros.dias || filtros.valor || filtros.dtDe || filtros.dtAte;
 
   return (
     <div className="space-y-4">
@@ -1305,6 +1383,11 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
             <option value="critico">🔴 Crítico (60+ dias)</option>
             <option value="atencao">🟡 Atenção (25-59 dias)</option>
             <option value="ok">🟢 OK (0-24 dias)</option>
+          </select>
+          <select value={filtros.valor} onChange={e => setF("valor", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: filtros.valor ? "#7e3af2" : "#e5e7eb", color: filtros.valor === "acima25k" ? "#7e3af2" : undefined }}>
+            <option value="">Todos os valores</option>
+            <option value="acima25k">⚠️ Acima de R$ 25k</option>
+            <option value="ate25k">Até R$ 25k</option>
           </select>
         </div>
 
@@ -1571,6 +1654,7 @@ function Relatorios({ notas }) {
   const [empresa, setEmpresa] = useState("");
   const [status, setStatus] = useState("");
   const [dias, setDias] = useState("");
+  const [valorFiltro, setValorFiltro] = useState("");
   const [tipoData, setTipoData] = useState("emissao");
   const [dtDe, setDtDe] = useState("");
   const [dtAte, setDtAte] = useState("");
@@ -1591,6 +1675,8 @@ function Relatorios({ notas }) {
     if (dias === "critico" && n.qtdeDias < 60) return false;
     if (dias === "atencao" && (n.qtdeDias < 25 || n.qtdeDias >= 60)) return false;
     if (dias === "ok" && n.qtdeDias >= 25) return false;
+    if (valorFiltro === "acima25k" && n.valor <= 25000) return false;
+    if (valorFiltro === "ate25k" && n.valor > 25000) return false;
     if (busca) {
       const b = busca.toLowerCase();
       if (!n.razaoSocial.toLowerCase().includes(b) && !n.numNota.includes(b) && !n.fornecedor.includes(b)) return false;
@@ -1614,11 +1700,11 @@ function Relatorios({ notas }) {
   const totalGeral = totalTaxas + totalICMS + totalMultas + totalJuros;
 
   const porStatus = STATUS_LIST.map(s => ({ status: s, count: filtradas.filter(n => n.status === s).length })).filter(x => x.count > 0);
-  const porEmpresa = EMPRESAS.map(e => ({ ...e, count: filtradas.filter(n => n.empresa === e.id).length, custos: filtradas.filter(n => n.empresa === e.id).reduce((s, n) => s + (n.taxaReanalise || 0) + (n.taxaDesembaraco || 0) + (n.icmsAntecipado || 0) + (n.multa || 0) + (n.juros || 0), 0) }));
+  const porEmpresa = EMPRESAS.map(e => ({ ...e, count: filtradas.filter(n => n.empresa === e.id).length, custos: filtradas.filter(n => n.empresa === e.id).reduce((s, n) => s + (n.taxaReanalise || 0) + (n.taxaDesembaraco || 0) + (n.icmsAntecipado || 0) + (n.multa10pct || 0) + (n.multa || 0) + (n.juros || 0), 0) }));
   const porFinalidade = FINALIDADES.map(f => ({ f, count: filtradas.filter(n => n.finalidade === f).length })).filter(x => x.count > 0);
 
-  const temFiltro = empresa || status || dias || dtDe || dtAte || finalidade || busca;
-  const limpar = () => { setEmpresa(""); setStatus(""); setDias(""); setDtDe(""); setDtAte(""); setFinalidade(""); setBusca(""); setTipoData("emissao"); };
+  const temFiltro = empresa || status || dias || dtDe || dtAte || finalidade || busca || valorFiltro;
+  const limpar = () => { setEmpresa(""); setStatus(""); setDias(""); setDtDe(""); setDtAte(""); setFinalidade(""); setBusca(""); setTipoData("emissao"); setValorFiltro(""); };
 
   function fmtDateInput(setter) {
     return (e) => {
@@ -1672,6 +1758,11 @@ function Relatorios({ notas }) {
             <option value="critico">🔴 Crítico (60+)</option>
             <option value="atencao">🟡 Atenção (25-59)</option>
             <option value="ok">🟢 OK (0-24)</option>
+          </select>
+          <select value={valorFiltro} onChange={e => setValorFiltro(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: valorFiltro ? "#7e3af2" : "#e5e7eb", color: valorFiltro === "acima25k" ? "#7e3af2" : undefined }}>
+            <option value="">Todos os valores</option>
+            <option value="acima25k">⚠️ Acima de R$ 25k</option>
+            <option value="ate25k">Até R$ 25k</option>
           </select>
         </div>
 
@@ -2200,6 +2291,7 @@ export default function App() {
       noRM: r.no_rm, taxaReanalise: r.taxa_reanalise, taxaDesembaraco: r.taxa_desembaraco,
       icmsAntecipado: r.icms_antecipado, multa: r.multa, juros: r.juros,
       dtReanalise: r.dt_reanalise, dtDesembaraco: r.dt_desembaraco, dtPostergacao: r.dt_postergacao,
+      multa10pct: r.multa10pct || 0, dtVencReanalise: r.dt_venc_reanalise || "", dtVencDesembaraco: r.dt_venc_desembaraco || "", dtVencIcms: r.dt_venc_icms || "",
       obs: r.obs, dtImportacao: r.dt_importacao, historico: r.historico || []
     };
   }
@@ -2214,6 +2306,7 @@ export default function App() {
       no_rm: n.noRM, taxa_reanalise: n.taxaReanalise, taxa_desembaraco: n.taxaDesembaraco,
       icms_antecipado: n.icmsAntecipado, multa: n.multa, juros: n.juros,
       dt_reanalise: n.dtReanalise, dt_desembaraco: n.dtDesembaraco, dt_postergacao: n.dtPostergacao,
+      multa10pct: n.multa10pct || 0, dt_venc_reanalise: n.dtVencReanalise || "", dt_venc_desembaraco: n.dtVencDesembaraco || "", dt_venc_icms: n.dtVencIcms || "",
       obs: n.obs, dt_importacao: n.dtImportacao, historico: n.historico,
       atualizado_em: new Date().toISOString()
     };
@@ -2304,8 +2397,8 @@ export default function App() {
           qtdeDias: parseInt(cols[8]) || 0,
           status: "Identificada",
           centroCusto: "", finalidade: "", responsavel: "", noRM: null,
-          taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa: 0, juros: 0,
-          dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", obs: "",
+          taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0,
+          dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "",
           dtImportacao: new Date().toLocaleDateString("pt-BR"),
           historico: []
         });
