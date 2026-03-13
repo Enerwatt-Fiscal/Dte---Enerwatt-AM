@@ -1954,6 +1954,17 @@ function ModalConfirmImport({ notasParaImportar, empresas, onConfirmar, onCancel
     grupos.forEach(g => { s[g.cnpj] = g.empresaId; });
     return s;
   });
+  const [empresaGlobal, setEmpresaGlobal] = useState("");
+
+  // Quando usuário escolhe empresa global, aplica a todos os grupos
+  const aplicarGlobal = (empId) => {
+    setEmpresaGlobal(empId);
+    if (empId) {
+      const novas = {};
+      grupos.forEach(g => { novas[g.cnpj] = empId; });
+      setSelecoes(novas);
+    }
+  };
 
   const confirmar = () => {
     const notasFinais = notasParaImportar.map(n => ({
@@ -1973,19 +1984,51 @@ function ModalConfirmImport({ notasParaImportar, empresas, onConfirmar, onCancel
           <h2 className="font-bold text-gray-800">Confirmar Importação</h2>
           <p className="text-xs text-gray-400 mt-1">{notasParaImportar.length} nota(s) novas encontradas em <span className="font-semibold">{fileName}</span></p>
         </div>
+
         <div className="p-5 space-y-4">
-          <p className="text-sm text-gray-600">Verifique a empresa identificada para cada CNPJ do arquivo. Corrija se necessário antes de importar.</p>
+
+          {/* TAG: Aplicar mesma empresa a todas */}
+          <div className="p-4 rounded-xl" style={{ background: "#f0f8f8", border: "2px solid #E8450A" }}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-black px-2 py-1 rounded-full text-white" style={{ background: "#E8450A" }}>⚡ ATALHO</span>
+              <p className="text-sm font-bold" style={{ color: "#1a4a4a" }}>Aplicar a mesma empresa em todas as notas</p>
+            </div>
+            <select
+              value={empresaGlobal}
+              onChange={e => aplicarGlobal(e.target.value)}
+              className="w-full border-2 rounded-lg px-3 py-2 text-sm font-semibold"
+              style={{ borderColor: empresaGlobal ? "#E8450A" : "#d0e8e8", color: empresaGlobal ? "#1a4a4a" : "#888" }}>
+              <option value="">Selecione para aplicar a todas...</option>
+              {empresas.filter(e => e.ativa).map(e => (
+                <option key={e.id} value={e.id}>{e.nome} — IE: {e.inscricao}</option>
+              ))}
+            </select>
+            {empresaGlobal && (
+              <p className="text-xs mt-2 font-semibold" style={{ color: "#E8450A" }}>
+                ✅ {empresas.find(e => e.id === empresaGlobal)?.nome} aplicada a todas as {notasParaImportar.length} notas
+              </p>
+            )}
+          </div>
+
+          {/* Divisor */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px" style={{ background: "#e5e7eb" }} />
+            <span className="text-xs text-gray-400 font-semibold">ou ajuste individualmente por CNPJ</span>
+            <div className="flex-1 h-px" style={{ background: "#e5e7eb" }} />
+          </div>
+
+          {/* Grupos por CNPJ */}
           {grupos.map(g => (
-            <div key={g.cnpj} className="p-4 rounded-xl border" style={{ borderColor: g.empresaId ? "#d1fae5" : "#fde68a", background: g.empresaId ? "#f0fdf4" : "#fffbeb" }}>
+            <div key={g.cnpj} className="p-4 rounded-xl border" style={{ borderColor: selecoes[g.cnpj] ? "#d1fae5" : "#fde68a", background: selecoes[g.cnpj] ? "#f0fdf4" : "#fffbeb" }}>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: g.empresaId ? "#d1fae5" : "#fde68a", color: g.empresaId ? "#065f46" : "#92400e" }}>
-                  {g.empresaId ? "✅ Identificado" : "⚠️ Não identificado"}
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: selecoes[g.cnpj] ? "#d1fae5" : "#fde68a", color: selecoes[g.cnpj] ? "#065f46" : "#92400e" }}>
+                  {selecoes[g.cnpj] ? "✅ Definida" : "⚠️ Pendente"}
                 </span>
                 <span className="text-xs text-gray-500 font-mono">{g.cnpj}</span>
                 <span className="text-xs text-gray-400">({g.notas.length} nota{g.notas.length > 1 ? "s" : ""})</span>
               </div>
               <label className="text-xs font-semibold text-gray-500 uppercase">Empresa</label>
-              <select value={selecoes[g.cnpj] || ""} onChange={e => setSelecoes(s => ({ ...s, [g.cnpj]: e.target.value }))}
+              <select value={selecoes[g.cnpj] || ""} onChange={e => { setEmpresaGlobal(""); setSelecoes(s => ({ ...s, [g.cnpj]: e.target.value })); }}
                 className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}>
                 <option value="">Selecione a empresa...</option>
                 {empresas.filter(e => e.ativa).map(e => (
@@ -1995,6 +2038,7 @@ function ModalConfirmImport({ notasParaImportar, empresas, onConfirmar, onCancel
             </div>
           ))}
         </div>
+
         <div className="flex justify-end gap-3 p-5 border-t" style={{ borderColor: "#f0f0f0" }}>
           <button onClick={onCancelar} className="px-4 py-2 rounded-lg border text-sm text-gray-600 hover:bg-gray-50" style={{ borderColor: "#e5e7eb" }}>Cancelar</button>
           <button onClick={confirmar}
