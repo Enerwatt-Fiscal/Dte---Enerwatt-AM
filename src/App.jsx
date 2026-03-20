@@ -1152,9 +1152,23 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
 // DRAWER DE ALERTAS
 // ============================================================
 function DrawerAlertas({ notas, filtro, onClose, onVerNota }) {
-  const ativas = notas.filter(n => !["Desembaraçada", "Recusada"].includes(n.status));
+  const ativas = notas.filter(n => !["Desembaraçada", "Selada", "Recusada"].includes(n.status));
   let lista = [];
   let titulo = "";
+
+  const agora2 = new Date();
+  const mesAtual2 = agora2.getMonth();
+  const anoAtual2 = agora2.getFullYear();
+  const nomeMes2 = agora2.toLocaleString("pt-BR", { month: "long" });
+  function noMesAtual2(dtStr) {
+    if (!dtStr || dtStr === "-") return false;
+    try {
+      const p = dtStr.split("/");
+      if (p.length !== 3) return false;
+      const dt = new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+      return dt.getMonth() === mesAtual2 && dt.getFullYear() === anoAtual2;
+    } catch { return false; }
+  }
 
   if (filtro === "critico") {
     lista = ativas.filter(n => n.qtdeDias >= 60).sort((a, b) => b.qtdeDias - a.qtdeDias);
@@ -1168,6 +1182,14 @@ function DrawerAlertas({ notas, filtro, onClose, onVerNota }) {
   } else if (filtro === "pagamento") {
     lista = ativas.filter(n => n.status === "Aguardando Pagamento");
     titulo = "💰 Aguardando Pagamento";
+  } else if (filtro === "concluidoMes") {
+    lista = notas.filter(n => (n.status === "Desembaraçada" || n.status === "Selada") && noMesAtual2(n.dtImportacao))
+      .sort((a, b) => a.razaoSocial.localeCompare(b.razaoSocial));
+    titulo = "✅ Concluídas em " + nomeMes2;
+  } else if (filtro === "custoMes") {
+    lista = notas.filter(n => noMesAtual2(n.dtImportacao) && (n.taxaReanalise||0)+(n.taxaDesembaraco||0)+(n.icmsAntecipado||0)+(n.multa10pct||0)+(n.multa||0)+(n.juros||0) > 0)
+      .sort((a, b) => ((b.taxaReanalise||0)+(b.taxaDesembaraco||0)+(b.icmsAntecipado||0)+(b.multa10pct||0)+(b.multa||0)+(b.juros||0)) - ((a.taxaReanalise||0)+(a.taxaDesembaraco||0)+(a.icmsAntecipado||0)+(a.multa10pct||0)+(a.multa||0)+(a.juros||0)));
+    titulo = "📊 Custos em " + nomeMes2;
   } else if (filtro === "comCusto") {
     lista = ativas.filter(n => (n.taxaReanalise||0)+(n.taxaDesembaraco||0)+(n.icmsAntecipado||0)+(n.multa||0)+(n.juros||0) > 0)
       .sort((a, b) => ((b.taxaReanalise||0)+(b.taxaDesembaraco||0)+(b.icmsAntecipado||0)+(b.multa||0)+(b.juros||0)) - ((a.taxaReanalise||0)+(a.taxaDesembaraco||0)+(a.icmsAntecipado||0)+(a.multa||0)+(a.juros||0)));
@@ -1221,13 +1243,39 @@ function DrawerAlertas({ notas, filtro, onClose, onVerNota }) {
 function Dashboard({ notas, onVerNota, onIrParaPainel }) {
   const [drawerFiltro, setDrawerFiltro] = useState(null);
 
-  const ativas = notas.filter(n => !["Desembaraçada", "Recusada"].includes(n.status));
+  // Mês atual
+  const agora = new Date();
+  const mesAtual = agora.getMonth();
+  const anoAtual = agora.getFullYear();
+
+  function noMesAtual(dtStr) {
+    if (!dtStr || dtStr === "-") return false;
+    try {
+      const p = dtStr.split("/");
+      if (p.length !== 3) return false;
+      const dt = new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+      return dt.getMonth() === mesAtual && dt.getFullYear() === anoAtual;
+    } catch { return false; }
+  }
+
+  const nomeMes = agora.toLocaleString("pt-BR", { month: "long" });
+
+  const statusConcluido = ["Desembaraçada", "Selada", "Recusada"];
+  const ativas = notas.filter(n => !statusConcluido.includes(n.status));
   const criticas = ativas.filter(n => n.qtdeDias >= 60);
   const atencao = ativas.filter(n => n.qtdeDias >= 25 && n.qtdeDias < 60);
   const acima25k = ativas.filter(n => n.valor > 25000);
   const aguardPag = ativas.filter(n => n.status === "Aguardando Pagamento");
-  const desembaracadas = notas.filter(n => n.status === "Desembaraçada");
-  const totalCustos = ativas.reduce((s, n) => s + (n.taxaReanalise || 0) + (n.taxaDesembaraco || 0) + (n.icmsAntecipado || 0) + (n.multa10pct || 0) + (n.multa || 0) + (n.juros || 0), 0);
+
+  // Desembaraçadas + Seladas no mês atual (pela data de importação)
+  const desembaracadasMes = notas.filter(n =>
+    (n.status === "Desembaraçada" || n.status === "Selada") && noMesAtual(n.dtImportacao)
+  );
+
+  // Custos do mês atual — todas as notas importadas no mês, independente do status
+  const notasMes = notas.filter(n => noMesAtual(n.dtImportacao));
+  const totalCustosMes = notasMes.reduce((s, n) =>
+    s + (n.taxaReanalise||0) + (n.taxaDesembaraco||0) + (n.icmsAntecipado||0) + (n.multa10pct||0) + (n.multa||0) + (n.juros||0), 0);
 
   const porEmpresa = EMPRESAS.map(e => ({
     ...e,
@@ -1242,8 +1290,8 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
     { label: "Atenção", valor: atencao.length, sub: "25–59 dias • clique para ver", cor: "#b7791f", bg: "#fffbeb", icon: "🟡", filtro: "atencao", clicavel: true },
     { label: "Acima de R$ 25k", valor: acima25k.length, sub: "Risco multa 10% • clique para ver", cor: "#7e3af2", bg: "#f5f3ff", icon: "⚠️", filtro: "acima25k", clicavel: true },
     { label: "Aguard. Pagamento", valor: aguardPag.length, sub: "Financeiro pendente • clique para ver", cor: "#1a56db", bg: "#eff6ff", icon: "💰", filtro: "pagamento", clicavel: true },
-    { label: "Desembaraçadas", valor: desembaracadas.length, sub: "Concluídas no período", cor: "#2d6a4f", bg: "#f0fdf4", icon: "✅", filtro: null, clicavel: false },
-    { label: "Custos Registrados", valor: fmtMoeda(totalCustos), sub: "Notas ativas • clique para ver", cor: "#E8450A", bg: "#f0f8f8", icon: "📊", filtro: "comCusto", clicavel: true },
+    { label: "Concluídas em " + nomeMes, valor: desembaracadasMes.length, sub: "Desembaraçadas + Seladas no mês", cor: "#2d6a4f", bg: "#f0fdf4", icon: "✅", filtro: "concluidoMes", clicavel: desembaracadasMes.length > 0 },
+    { label: "Custos em " + nomeMes, valor: fmtMoeda(totalCustosMes), sub: "Notas importadas no mês • clique para ver", cor: "#E8450A", bg: "#f0f8f8", icon: "📊", filtro: "custoMes", clicavel: true },
   ];
 
   return (
