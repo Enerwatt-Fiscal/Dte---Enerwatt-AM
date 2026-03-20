@@ -595,7 +595,7 @@ const EMPRESAS_INICIAIS = [
 let EMPRESAS = EMPRESAS_INICIAIS;
 
 const FINALIDADES = ["Uso/Consumo", "Industrialização", "Revenda", "Remessa/Transferência", "Imobilizado", "Não Identificado"];
-const STATUS_LIST = ["Identificada", "Em Reanálise", "Aguardando Pagamento", "Aguarda Email SEFAZ", "Desembaraço Solicitado", "Desembaraçada", "Selada", "Recusada", "Postergada"];
+const STATUS_LIST = ["Identificada", "Em Identificação", "Em Reanálise", "Aguardando Pagamento", "Aguarda Email SEFAZ", "Desembaraço Solicitado", "Desembaraçada", "Selada", "Recusada", "Postergada"];
 
 function parseValor(v) {
   if (!v) return 0;
@@ -616,39 +616,39 @@ function diffDias(dataEmissao) {
 
 const NOTAS_INICIAIS = [
   // FILIAL 02 - MANAUS
-  { id: "1", empresa: "filial02", fornecedor: "02.677.045/0002-01", razaoSocial: "HORUS TELECOMUNICACOES LTDA", numNota: "184028", cfop: "6102", dtEmissao: "07/01/2026", dtApresentacao: "-", chave: "52260102677045000201552110001840281230738747", valor: 3623.50, qtdeDias: 58, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "2", empresa: "filial02", fornecedor: "02.677.045/0002-01", razaoSocial: "HORUS TELECOMUNICACOES LTDA", numNota: "184154", cfop: "6102", dtEmissao: "12/01/2026", dtApresentacao: "-", chave: "52260102677045000201552110001841541263066581", valor: 6197.64, qtdeDias: 53, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "3", empresa: "filial02", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5327", cfop: "6554", dtEmissao: "12/01/2026", dtApresentacao: "-", chave: "52260107791042000137550010000053271163320077", valor: 240000.00, qtdeDias: 53, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "4", empresa: "filial02", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5332", cfop: "6554", dtEmissao: "19/01/2026", dtApresentacao: "-", chave: "52260107791042000137550010000053321351857147", valor: 97000.00, qtdeDias: 46, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "5", empresa: "filial02", fornecedor: "26.502.220/0001-07", razaoSocial: "Engecomp Consultoria e Locacao de Sistemas Ltda", numNota: "2064", cfop: "6908", dtEmissao: "19/01/2026", dtApresentacao: "-", chave: "35260126502220000107550010000020641140106616", valor: 1200.00, qtdeDias: 46, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "6", empresa: "filial02", fornecedor: "01.816.875/0001-29", razaoSocial: "AJEL MATERIAIS ELETRICOS LTDA", numNota: "1045837", cfop: "6110", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "52260101816875000129550010010458371541541030", valor: 1190.05, qtdeDias: 35, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "7", empresa: "filial02", fornecedor: "35.784.562/0001-58", razaoSocial: "ADR COMERCIO DE EQUIPAMENTOS DE INFORMATICA EIRELI", numNota: "13254", cfop: "6102", dtEmissao: "09/02/2026", dtApresentacao: "-", chave: "35260235784562000158550010000132541666574003", valor: 6130.00, qtdeDias: 25, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "8", empresa: "filial02", fornecedor: "13.087.023/0001-27", razaoSocial: "BRASFORMER PRODUTOS ELETRICOS LTDA", numNota: "10154", cfop: "6109", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "35260213087023000127550010000101541201141316", valor: 3745.10, qtdeDias: 14, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "1", empresa: "filial02", fornecedor: "02.677.045/0002-01", razaoSocial: "HORUS TELECOMUNICACOES LTDA", numNota: "184028", cfop: "6102", dtEmissao: "07/01/2026", dtApresentacao: "-", chave: "52260102677045000201552110001840281230738747", valor: 3623.50, qtdeDias: 58, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "2", empresa: "filial02", fornecedor: "02.677.045/0002-01", razaoSocial: "HORUS TELECOMUNICACOES LTDA", numNota: "184154", cfop: "6102", dtEmissao: "12/01/2026", dtApresentacao: "-", chave: "52260102677045000201552110001841541263066581", valor: 6197.64, qtdeDias: 53, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "3", empresa: "filial02", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5327", cfop: "6554", dtEmissao: "12/01/2026", dtApresentacao: "-", chave: "52260107791042000137550010000053271163320077", valor: 240000.00, qtdeDias: 53, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "4", empresa: "filial02", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5332", cfop: "6554", dtEmissao: "19/01/2026", dtApresentacao: "-", chave: "52260107791042000137550010000053321351857147", valor: 97000.00, qtdeDias: 46, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "5", empresa: "filial02", fornecedor: "26.502.220/0001-07", razaoSocial: "Engecomp Consultoria e Locacao de Sistemas Ltda", numNota: "2064", cfop: "6908", dtEmissao: "19/01/2026", dtApresentacao: "-", chave: "35260126502220000107550010000020641140106616", valor: 1200.00, qtdeDias: 46, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "6", empresa: "filial02", fornecedor: "01.816.875/0001-29", razaoSocial: "AJEL MATERIAIS ELETRICOS LTDA", numNota: "1045837", cfop: "6110", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "52260101816875000129550010010458371541541030", valor: 1190.05, qtdeDias: 35, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "7", empresa: "filial02", fornecedor: "35.784.562/0001-58", razaoSocial: "ADR COMERCIO DE EQUIPAMENTOS DE INFORMATICA EIRELI", numNota: "13254", cfop: "6102", dtEmissao: "09/02/2026", dtApresentacao: "-", chave: "35260235784562000158550010000132541666574003", valor: 6130.00, qtdeDias: 25, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "8", empresa: "filial02", fornecedor: "13.087.023/0001-27", razaoSocial: "BRASFORMER PRODUTOS ELETRICOS LTDA", numNota: "10154", cfop: "6109", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "35260213087023000127550010000101541201141316", valor: 3745.10, qtdeDias: 14, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
   // FILIAL 13 - MLA
-  { id: "9", empresa: "filial13", fornecedor: "07.791.042/0007-22", razaoSocial: "ENERWATT ENGENHARIA, INDUSTRIA E COMERCIO - EIRELI", numNota: "1702", cfop: "6151", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "35260107791042000722550010000017021171724335", valor: 4272.61, qtdeDias: 35, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "10", empresa: "filial13", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5364", cfop: "6554", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "52260207791042000137550010000053641305471689", valor: 4509.90, qtdeDias: 18, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "11", empresa: "filial13", fornecedor: "02.341.470/0001-44", razaoSocial: "Boa Vista Energia S/A", numNota: "1017", cfop: "6915", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "14260202341470000144550020000010171311612194", valor: 99610.55, qtdeDias: 14, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "12", empresa: "filial13", fornecedor: "02.341.470/0001-44", razaoSocial: "Boa Vista Energia S/A", numNota: "1016", cfop: "6915", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "14260202341470000144550020000010161341856914", valor: 172410.30, qtdeDias: 14, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "9", empresa: "filial13", fornecedor: "07.791.042/0007-22", razaoSocial: "ENERWATT ENGENHARIA, INDUSTRIA E COMERCIO - EIRELI", numNota: "1702", cfop: "6151", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "35260107791042000722550010000017021171724335", valor: 4272.61, qtdeDias: 35, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "10", empresa: "filial13", fornecedor: "07.791.042/0001-37", razaoSocial: "ENERWATT ENGENHARIA LTDA", numNota: "5364", cfop: "6554", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "52260207791042000137550010000053641305471689", valor: 4509.90, qtdeDias: 18, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "11", empresa: "filial13", fornecedor: "02.341.470/0001-44", razaoSocial: "Boa Vista Energia S/A", numNota: "1017", cfop: "6915", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "14260202341470000144550020000010171311612194", valor: 99610.55, qtdeDias: 14, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "12", empresa: "filial13", fornecedor: "02.341.470/0001-44", razaoSocial: "Boa Vista Energia S/A", numNota: "1016", cfop: "6915", dtEmissao: "20/02/2026", dtApresentacao: "-", chave: "14260202341470000144550020000010161341856914", valor: 172410.30, qtdeDias: 14, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
   // LINHAS DO NORTE
-  { id: "13", empresa: "linhasnorte", fornecedor: "10.159.093/0002-36", razaoSocial: "VIMEZER FORN DE SERV LTDA", numNota: "886481", cfop: "6403", dtEmissao: "17/01/2026", dtApresentacao: "-", chave: "14260110159093000236550010008864811598662666", valor: 9030.00, qtdeDias: 48, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "14", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "939", cfop: "6103", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260101200900000145550010000009391300001762", valor: 7357.00, qtdeDias: 44, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "15", empresa: "linhasnorte", fornecedor: "02.905.133/0001-32", razaoSocial: "CABEXPRESS IND.COM.DE CABOS ELET.", numNota: "43738", cfop: "6101", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "35260102905133000132550010000437381888458950", valor: 6762.24, qtdeDias: 44, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "16", empresa: "linhasnorte", fornecedor: "09.296.337/0001-62", razaoSocial: "C. COMERCIO CONSTRUCAO SERVICOS LTDA", numNota: "2816", cfop: "6102", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260109296337000162550010000028161380042518", valor: 1600.00, qtdeDias: 44, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "17", empresa: "linhasnorte", fornecedor: "09.296.337/0001-62", razaoSocial: "C. COMERCIO CONSTRUCAO SERVICOS LTDA", numNota: "2815", cfop: "6102", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260109296337000162550010000028151518643526", valor: 800.00, qtdeDias: 44, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "18", empresa: "linhasnorte", fornecedor: "10.159.093/0002-36", razaoSocial: "VIMEZER FORN DE SERV LTDA", numNota: "887052", cfop: "6403", dtEmissao: "26/01/2026", dtApresentacao: "-", chave: "14260110159093000236550010008870521446156556", valor: 1210.00, qtdeDias: 39, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "19", empresa: "linhasnorte", fornecedor: "62.384.763/0001-30", razaoSocial: "CIVITELLA E CIA LTDA", numNota: "18531", cfop: "6101", dtEmissao: "26/01/2026", dtApresentacao: "-", chave: "35260162384763000130550000000185311023587016", valor: 14031.89, qtdeDias: 39, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "20", empresa: "linhasnorte", fornecedor: "10.159.093/0007-40", razaoSocial: "VIMEZER FORNC. DE SERV. LTDA", numNota: "2259", cfop: "6403", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "14260110159093000740550010000022591912085940", valor: 1055.00, qtdeDias: 35, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "21", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "954", cfop: "6103", dtEmissao: "04/02/2026", dtApresentacao: "-", chave: "14260201200900000145550010000009541300001916", valor: 11023.00, qtdeDias: 30, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "22", empresa: "linhasnorte", fornecedor: "05.059.252/0001-00", razaoSocial: "MOURAO E LIRA LTDA - EPP", numNota: "27692", cfop: "6102", dtEmissao: "04/02/2026", dtApresentacao: "-", chave: "14260205059252000100550010000276921095977758", valor: 1894.60, qtdeDias: 30, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "23", empresa: "linhasnorte", fornecedor: "19.215.087/0002-23", razaoSocial: "MARTINS & SA LTDA ME", numNota: "2109", cfop: "6102", dtEmissao: "05/02/2026", dtApresentacao: "-", chave: "14260219215087000223550010000021091182559020", valor: 7134.00, qtdeDias: 29, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "24", empresa: "linhasnorte", fornecedor: "10.159.093/0001-55", razaoSocial: "VIMEZER FORN. DE SERV. LTDA", numNota: "193912", cfop: "6403", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260210159093000155550010001939121384724670", valor: 75.00, qtdeDias: 23, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "25", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4125", cfop: "6102", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041251344287275", valor: 112.00, qtdeDias: 23, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "26", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4124", cfop: "6102", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041241335350698", valor: 1073.00, qtdeDias: 23, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "27", empresa: "linhasnorte", fornecedor: "10.159.093/0007-40", razaoSocial: "VIMEZER FORNC. DE SERV. LTDA", numNota: "2614", cfop: "6403", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "14260210159093000740550010000026141073344889", valor: 1783.00, qtdeDias: 18, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "28", empresa: "linhasnorte", fornecedor: "19.215.087/0002-23", razaoSocial: "MARTINS & SA LTDA ME", numNota: "2142", cfop: "6102", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "14260219215087000223550010000021421064331406", valor: 3928.00, qtdeDias: 18, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "29", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "960", cfop: "6103", dtEmissao: "18/02/2026", dtApresentacao: "-", chave: "14260201200900000145550010000009601300001972", valor: 12331.00, qtdeDias: 16, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "30", empresa: "linhasnorte", fornecedor: "01.867.060/0001-79", razaoSocial: "M. J. M. DA SILVA", numNota: "17514", cfop: "6101", dtEmissao: "18/02/2026", dtApresentacao: "-", chave: "14260201867060000179550010000175141004126555", valor: 400.00, qtdeDias: 16, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
-  { id: "31", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4139", cfop: "6102", dtEmissao: "24/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041391996657711", valor: 1960.00, qtdeDias: 10, status: "Identificada", centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "13", empresa: "linhasnorte", fornecedor: "10.159.093/0002-36", razaoSocial: "VIMEZER FORN DE SERV LTDA", numNota: "886481", cfop: "6403", dtEmissao: "17/01/2026", dtApresentacao: "-", chave: "14260110159093000236550010008864811598662666", valor: 9030.00, qtdeDias: 48, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "14", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "939", cfop: "6103", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260101200900000145550010000009391300001762", valor: 7357.00, qtdeDias: 44, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "15", empresa: "linhasnorte", fornecedor: "02.905.133/0001-32", razaoSocial: "CABEXPRESS IND.COM.DE CABOS ELET.", numNota: "43738", cfop: "6101", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "35260102905133000132550010000437381888458950", valor: 6762.24, qtdeDias: 44, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "16", empresa: "linhasnorte", fornecedor: "09.296.337/0001-62", razaoSocial: "C. COMERCIO CONSTRUCAO SERVICOS LTDA", numNota: "2816", cfop: "6102", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260109296337000162550010000028161380042518", valor: 1600.00, qtdeDias: 44, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "17", empresa: "linhasnorte", fornecedor: "09.296.337/0001-62", razaoSocial: "C. COMERCIO CONSTRUCAO SERVICOS LTDA", numNota: "2815", cfop: "6102", dtEmissao: "21/01/2026", dtApresentacao: "-", chave: "14260109296337000162550010000028151518643526", valor: 800.00, qtdeDias: 44, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "18", empresa: "linhasnorte", fornecedor: "10.159.093/0002-36", razaoSocial: "VIMEZER FORN DE SERV LTDA", numNota: "887052", cfop: "6403", dtEmissao: "26/01/2026", dtApresentacao: "-", chave: "14260110159093000236550010008870521446156556", valor: 1210.00, qtdeDias: 39, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "19", empresa: "linhasnorte", fornecedor: "62.384.763/0001-30", razaoSocial: "CIVITELLA E CIA LTDA", numNota: "18531", cfop: "6101", dtEmissao: "26/01/2026", dtApresentacao: "-", chave: "35260162384763000130550000000185311023587016", valor: 14031.89, qtdeDias: 39, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "20", empresa: "linhasnorte", fornecedor: "10.159.093/0007-40", razaoSocial: "VIMEZER FORNC. DE SERV. LTDA", numNota: "2259", cfop: "6403", dtEmissao: "30/01/2026", dtApresentacao: "-", chave: "14260110159093000740550010000022591912085940", valor: 1055.00, qtdeDias: 35, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "21", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "954", cfop: "6103", dtEmissao: "04/02/2026", dtApresentacao: "-", chave: "14260201200900000145550010000009541300001916", valor: 11023.00, qtdeDias: 30, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "22", empresa: "linhasnorte", fornecedor: "05.059.252/0001-00", razaoSocial: "MOURAO E LIRA LTDA - EPP", numNota: "27692", cfop: "6102", dtEmissao: "04/02/2026", dtApresentacao: "-", chave: "14260205059252000100550010000276921095977758", valor: 1894.60, qtdeDias: 30, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "23", empresa: "linhasnorte", fornecedor: "19.215.087/0002-23", razaoSocial: "MARTINS & SA LTDA ME", numNota: "2109", cfop: "6102", dtEmissao: "05/02/2026", dtApresentacao: "-", chave: "14260219215087000223550010000021091182559020", valor: 7134.00, qtdeDias: 29, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "24", empresa: "linhasnorte", fornecedor: "10.159.093/0001-55", razaoSocial: "VIMEZER FORN. DE SERV. LTDA", numNota: "193912", cfop: "6403", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260210159093000155550010001939121384724670", valor: 75.00, qtdeDias: 23, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "25", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4125", cfop: "6102", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041251344287275", valor: 112.00, qtdeDias: 23, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "26", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4124", cfop: "6102", dtEmissao: "11/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041241335350698", valor: 1073.00, qtdeDias: 23, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "27", empresa: "linhasnorte", fornecedor: "10.159.093/0007-40", razaoSocial: "VIMEZER FORNC. DE SERV. LTDA", numNota: "2614", cfop: "6403", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "14260210159093000740550010000026141073344889", valor: 1783.00, qtdeDias: 18, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "28", empresa: "linhasnorte", fornecedor: "19.215.087/0002-23", razaoSocial: "MARTINS & SA LTDA ME", numNota: "2142", cfop: "6102", dtEmissao: "16/02/2026", dtApresentacao: "-", chave: "14260219215087000223550010000021421064331406", valor: 3928.00, qtdeDias: 18, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "29", empresa: "linhasnorte", fornecedor: "01.200.900/0001-45", razaoSocial: "ELEUZA AMARAL DA SILVA", numNota: "960", cfop: "6103", dtEmissao: "18/02/2026", dtApresentacao: "-", chave: "14260201200900000145550010000009601300001972", valor: 12331.00, qtdeDias: 16, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "30", empresa: "linhasnorte", fornecedor: "01.867.060/0001-79", razaoSocial: "M. J. M. DA SILVA", numNota: "17514", cfop: "6101", dtEmissao: "18/02/2026", dtApresentacao: "-", chave: "14260201867060000179550010000175141004126555", valor: 400.00, qtdeDias: 16, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
+  { id: "31", empresa: "linhasnorte", fornecedor: "27.127.974/0001-97", razaoSocial: "J. F. MOREIRA -ME", numNota: "4139", cfop: "6102", dtEmissao: "24/02/2026", dtApresentacao: "-", chave: "14260227127974000197550020000041391996657711", valor: 1960.00, qtdeDias: 10, status: "Identificada", centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0, dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", codigoCusto: "", lancamentos: [], obs: "", pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "", historico: [{ acao: "Nota importada do DTE", usuario: "Sistema", data: "06/03/2026 08:00" }] },
 ];
 
 // Usuários carregados do Supabase dinamicamente
@@ -983,143 +983,7 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
           )}
 
           {activeTab === "financeiro" && (
-            <div className="space-y-4">
-              <div className="p-3 rounded-xl text-xs text-gray-500" style={{ background: "#f8f9fa" }}>
-                Taxa de desembaraço é fixa (R$ 50,00). Demais valores informados pelo DTE e registrados manualmente.
-              </div>
-
-              {/* Taxa de Reanálise */}
-              <div className="rounded-xl p-4" style={{ background: form.pagoReanalise ? "#f0fdf4" : "#f0f8f8", border: form.pagoReanalise ? "1px solid #86efac" : "1px solid #d0e8e8" }}>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#1a4a4a" }}>Taxa de Reanálise</p>
-                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                    <input type="checkbox" checked={form.pagoReanalise || false} onChange={e => set("pagoReanalise", e.target.checked)} className="w-4 h-4 accent-green-600" />
-                    <span className="text-xs font-semibold" style={{ color: form.pagoReanalise ? "#2d6a4f" : "#9ca3af" }}>{form.pagoReanalise ? "✅ Pago" : "Pago?"}</span>
-                  </label>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase">Valor (R$)</label>
-                    <input type="number" step="0.01" value={form.taxaReanalise || ""} onChange={e => set("taxaReanalise", parseFloat(e.target.value) || 0)}
-                      placeholder="0,00" className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase">Vencimento</label>
-                    <input type="text" value={form.dtVencReanalise || ""} onChange={e => { let v = e.target.value.replace(/\D/g,""); if(v.length>=3) v=v.slice(0,2)+"/"+v.slice(2); if(v.length>=6) v=v.slice(0,5)+"/"+v.slice(5); set("dtVencReanalise", v.slice(0,10)); }}
-                      placeholder="DD/MM/AAAA" maxLength={10} className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: form.dtVencReanalise?.length===10 ? "#E8450A" : "#e5e7eb" }} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Taxa de Desembaraço */}
-              <div className="rounded-xl p-4" style={{ background: form.pagoDesembaraco ? "#f0fdf4" : "#f0f8f8", border: form.pagoDesembaraco ? "1px solid #86efac" : "1px solid #d0e8e8" }}>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#1a4a4a" }}>Taxa de Desembaraço <span className="font-normal text-gray-400">(R$ 50,00 fixo)</span></p>
-                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                    <input type="checkbox" checked={form.pagoDesembaraco || false} onChange={e => set("pagoDesembaraco", e.target.checked)} className="w-4 h-4 accent-green-600" />
-                    <span className="text-xs font-semibold" style={{ color: form.pagoDesembaraco ? "#2d6a4f" : "#9ca3af" }}>{form.pagoDesembaraco ? "✅ Pago" : "Pago?"}</span>
-                  </label>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase">Valor (R$)</label>
-                    <input type="number" step="0.01" value={form.taxaDesembaraco || ""} onChange={e => set("taxaDesembaraco", parseFloat(e.target.value) || 0)}
-                      placeholder="50,00" className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase">Vencimento</label>
-                    <input type="text" value={form.dtVencDesembaraco || ""} onChange={e => { let v = e.target.value.replace(/\D/g,""); if(v.length>=3) v=v.slice(0,2)+"/"+v.slice(2); if(v.length>=6) v=v.slice(0,5)+"/"+v.slice(5); set("dtVencDesembaraco", v.slice(0,10)); }}
-                      placeholder="DD/MM/AAAA" maxLength={10} className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: form.dtVencDesembaraco?.length===10 ? "#E8450A" : "#e5e7eb" }} />
-                  </div>
-                </div>
-              </div>
-
-              {/* ICMS Antecipado */}
-              <div className="rounded-xl p-4" style={{ background: form.pagoIcms ? "#f0fdf4" : "#f0f8f8", border: form.pagoIcms ? "1px solid #86efac" : "1px solid #d0e8e8" }}>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#1a4a4a" }}>ICMS Antecipado <span className="font-normal text-gray-400">(notas abaixo de R$ 25k)</span></p>
-                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                    <input type="checkbox" checked={form.pagoIcms || false} onChange={e => set("pagoIcms", e.target.checked)} className="w-4 h-4 accent-green-600" />
-                    <span className="text-xs font-semibold" style={{ color: form.pagoIcms ? "#2d6a4f" : "#9ca3af" }}>{form.pagoIcms ? "✅ Pago" : "Pago?"}</span>
-                  </label>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase">Valor (R$)</label>
-                    <input type="number" step="0.01" value={form.icmsAntecipado || ""} onChange={e => set("icmsAntecipado", parseFloat(e.target.value) || 0)}
-                      placeholder="0,00" className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase">Vencimento</label>
-                    <input type="text" value={form.dtVencIcms || ""} onChange={e => { let v = e.target.value.replace(/\D/g,""); if(v.length>=3) v=v.slice(0,2)+"/"+v.slice(2); if(v.length>=6) v=v.slice(0,5)+"/"+v.slice(5); set("dtVencIcms", v.slice(0,10)); }}
-                      placeholder="DD/MM/AAAA" maxLength={10} className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: form.dtVencIcms?.length===10 ? "#E8450A" : "#e5e7eb" }} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Multa 10% + Multa adicional + Juros — sem vencimento */}
-              <div className="rounded-xl p-4" style={{ background: "#fff8f5", border: "1px solid #ffd6b8" }}>
-                <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "#E8450A" }}>Multas e Juros</p>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase">Multa 10% <span className="text-purple-500">(acima R$25k)</span></label>
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" checked={form.pagoMulta10 || false} onChange={e => set("pagoMulta10", e.target.checked)} className="w-3.5 h-3.5 accent-green-600" />
-                        <span className="text-xs" style={{ color: form.pagoMulta10 ? "#2d6a4f" : "#9ca3af" }}>{form.pagoMulta10 ? "✅" : "Pago?"}</span>
-                      </label>
-                    </div>
-                    <input type="number" step="0.01" value={form.multa10pct || ""} onChange={e => set("multa10pct", parseFloat(e.target.value) || 0)}
-                      placeholder="0,00" className="w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
-                    {form.valor > 25000 && (form.multa10pct === 0 || !form.multa10pct) && (
-                      <p className="text-xs mt-1 font-semibold" style={{ color: "#7e3af2" }}>Sugerido: {fmtMoeda(form.valor * 0.10)}</p>
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase">Multa Adicional (R$)</label>
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" checked={form.pagoMulta || false} onChange={e => set("pagoMulta", e.target.checked)} className="w-3.5 h-3.5 accent-green-600" />
-                        <span className="text-xs" style={{ color: form.pagoMulta ? "#2d6a4f" : "#9ca3af" }}>{form.pagoMulta ? "✅" : "Pago?"}</span>
-                      </label>
-                    </div>
-                    <input type="number" step="0.01" value={form.multa || ""} onChange={e => set("multa", parseFloat(e.target.value) || 0)}
-                      placeholder="0,00" className="w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase">Juros (R$)</label>
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" checked={form.pagoJuros || false} onChange={e => set("pagoJuros", e.target.checked)} className="w-3.5 h-3.5 accent-green-600" />
-                        <span className="text-xs" style={{ color: form.pagoJuros ? "#2d6a4f" : "#9ca3af" }}>{form.pagoJuros ? "✅" : "Pago?"}</span>
-                      </label>
-                    </div>
-                    <input type="number" step="0.01" value={form.juros || ""} onChange={e => set("juros", parseFloat(e.target.value) || 0)}
-                      placeholder="0,00" className="w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Total */}
-              <div className="p-4 rounded-xl" style={{ background: "#1a4a4a" }}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#7ecece" }}>Total de Custos</p>
-                    <p className="text-2xl font-black text-white mt-1">
-                      {fmtMoeda((form.taxaReanalise||0)+(form.taxaDesembaraco||0)+(form.icmsAntecipado||0)+(form.multa10pct||0)+(form.multa||0)+(form.juros||0))}
-                    </p>
-                  </div>
-                  <div className="text-right space-y-0.5">
-                    {form.taxaReanalise > 0 && <p className="text-xs" style={{ color: "#7ecece" }}>Reanálise: {fmtMoeda(form.taxaReanalise)}</p>}
-                    {form.taxaDesembaraco > 0 && <p className="text-xs" style={{ color: "#7ecece" }}>Desembaraço: {fmtMoeda(form.taxaDesembaraco)}</p>}
-                    {form.icmsAntecipado > 0 && <p className="text-xs" style={{ color: "#7ecece" }}>ICMS: {fmtMoeda(form.icmsAntecipado)}</p>}
-                    {form.multa10pct > 0 && <p className="text-xs" style={{ color: "#f0a500" }}>Multa 10%: {fmtMoeda(form.multa10pct)}</p>}
-                    {form.multa > 0 && <p className="text-xs" style={{ color: "#f0a500" }}>Multa Adic.: {fmtMoeda(form.multa)}</p>}
-                    {form.juros > 0 && <p className="text-xs" style={{ color: "#f0a500" }}>Juros: {fmtMoeda(form.juros)}</p>}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <AbaFinanceiro form={form} set={set} fmtMoeda={fmtMoeda} />
           )}
 
           {activeTab === "historico" && (
@@ -1163,9 +1027,15 @@ function DrawerAlertas({ notas, filtro, onClose, onVerNota }) {
   function noMesAtual2(dtStr) {
     if (!dtStr || dtStr === "-") return false;
     try {
-      const p = dtStr.split("/");
-      if (p.length !== 3) return false;
-      const dt = new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+      let dt;
+      if (dtStr.includes("/")) {
+        const p = dtStr.split("/");
+        if (p.length !== 3) return false;
+        dt = new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+      } else {
+        dt = new Date(dtStr); // ISO format
+      }
+      if (isNaN(dt.getTime())) return false;
       return dt.getMonth() === mesAtual2 && dt.getFullYear() === anoAtual2;
     } catch { return false; }
   }
@@ -1251,9 +1121,15 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
   function noMesAtual(dtStr) {
     if (!dtStr || dtStr === "-") return false;
     try {
-      const p = dtStr.split("/");
-      if (p.length !== 3) return false;
-      const dt = new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+      let dt;
+      if (dtStr.includes("/")) {
+        const p = dtStr.split("/");
+        if (p.length !== 3) return false;
+        dt = new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+      } else {
+        dt = new Date(dtStr); // ISO format
+      }
+      if (isNaN(dt.getTime())) return false;
       return dt.getMonth() === mesAtual && dt.getFullYear() === anoAtual;
     } catch { return false; }
   }
@@ -2157,6 +2033,366 @@ function ModalConfirmImport({ notasParaImportar, empresas, onConfirmar, onCancel
 // TELA: CONFIGURAÇÕES
 // ============================================================
 // ============================================================
+// ABA FINANCEIRO — LANÇAMENTOS LIVRES
+// ============================================================
+const TIPOS_LANCAMENTO = ["Taxa de Reanálise","Taxa de Desembaraço","ICMS Antecipado","Multa 10%","Multa Adicional","Juros","Outro"];
+
+function AbaFinanceiro({ form, set, fmtMoeda }) {
+  const lancamentos = form.lancamentos || [];
+
+  function updLanc(idx, campo, val) {
+    const novo = lancamentos.map((l, i) => i === idx ? { ...l, [campo]: val } : l);
+    set("lancamentos", novo);
+  }
+  function addLanc() {
+    set("lancamentos", [...lancamentos, { id: Date.now(), tipo: "Taxa de Desembaraço", codigo: "", valor: "", venc: "", pago: false }]);
+  }
+  function remLanc(idx) {
+    set("lancamentos", lancamentos.filter((_, i) => i !== idx));
+  }
+  function fmtDate(val) {
+    let v = val.replace(/\D/g,"");
+    if(v.length>=3) v=v.slice(0,2)+"/"+v.slice(2);
+    if(v.length>=6) v=v.slice(0,5)+"/"+v.slice(5);
+    return v.slice(0,10);
+  }
+  const total = lancamentos.filter(l=>!l.pago).reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+  const pago  = lancamentos.filter(l=>l.pago).reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+  const totalGeral = total + pago;
+
+  return (
+    <div className="space-y-3">
+      <div className="text-xs text-gray-400 px-1">Registre todos os lançamentos financeiros desta nota — taxas, ICMS, multas e juros.</div>
+
+      {lancamentos.map((l, idx) => (
+        <div key={l.id || idx} className="rounded-xl p-4" style={{ background: l.pago ? "#f0fdf4" : "#f8f9fa", border: l.pago ? "1px solid #86efac" : "1px solid #e5e7eb" }}>
+          <div className="flex items-center justify-between mb-3">
+            <select value={l.tipo} onChange={e => updLanc(idx,"tipo",e.target.value)}
+              className="text-xs font-semibold border rounded-lg px-2 py-1.5" style={{ borderColor:"#e5e7eb", color:"#1a4a4a", background:"white" }}>
+              {TIPOS_LANCAMENTO.map(t => <option key={t}>{t}</option>)}
+            </select>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                <input type="checkbox" checked={l.pago||false} onChange={e=>updLanc(idx,"pago",e.target.checked)} className="w-4 h-4 accent-green-600" />
+                <span className="text-xs font-semibold" style={{ color: l.pago ? "#2d6a4f" : "#9ca3af" }}>{l.pago ? "✅ Pago" : "Pago?"}</span>
+              </label>
+              <button onClick={()=>remLanc(idx)} className="text-gray-300 hover:text-red-400 text-lg font-light leading-none transition-colors">×</button>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="text-xs font-semibold text-gray-400 uppercase">Código</label>
+              <input value={l.codigo||""} onChange={e=>updLanc(idx,"codigo",e.target.value)}
+                placeholder="Ex: 1.1-IM"
+                className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor:"#e5e7eb" }} />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-400 uppercase">Valor (R$)</label>
+              <input type="number" step="0.01" value={l.valor||""} onChange={e=>updLanc(idx,"valor",e.target.value)}
+                placeholder="0,00"
+                className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor:"#e5e7eb" }} />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-400 uppercase">Vencimento</label>
+              <input value={l.venc||""} onChange={e=>updLanc(idx,"venc",fmtDate(e.target.value))}
+                placeholder="DD/MM/AAAA" maxLength={10}
+                className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: l.venc?.length===10 ? "#E8450A" : "#e5e7eb" }} />
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <button onClick={addLanc}
+        className="w-full py-2.5 rounded-xl text-sm font-semibold border-2 border-dashed transition-colors"
+        style={{ borderColor:"#d0e8e8", color:"#4db8b8", background:"transparent" }}>
+        + Adicionar lançamento
+      </button>
+
+      {lancamentos.length > 0 && (
+        <div className="p-4 rounded-xl" style={{ background:"#1a4a4a" }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color:"#7ecece" }}>Total Geral</p>
+              <p className="text-2xl font-black text-white mt-1">{fmtMoeda(totalGeral)}</p>
+            </div>
+            <div className="text-right space-y-1">
+              <p className="text-xs" style={{ color:"#7ecece" }}>Pago: <span className="font-semibold text-white">{fmtMoeda(pago)}</span></p>
+              <p className="text-xs" style={{ color:"#f0a500" }}>Pendente: <span className="font-semibold">{fmtMoeda(total)}</span></p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// DASHBOARD GERENCIAL
+// ============================================================
+function DashboardGerencial({ notas, empresas }) {
+  const hoje = new Date();
+  const [dtDe, setDtDe] = useState(`01/${String(hoje.getMonth()+1).padStart(2,"0")}/${hoje.getFullYear()}`);
+  const [dtAte, setDtAte] = useState(`${String(hoje.getDate()).padStart(2,"0")}/${String(hoje.getMonth()+1).padStart(2,"0")}/${hoje.getFullYear()}`);
+  const [filtroEmp, setFiltroEmp] = useState("");
+  const [filtroFin, setFiltroFin] = useState("");
+
+  function parseBR(d) {
+    if(!d||d.length<10) return null;
+    const p=d.split("/"); if(p.length!==3) return null;
+    return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
+  }
+  const de = parseBR(dtDe), ate = parseBR(dtAte);
+
+  const notasPeriodo = notas.filter(n => {
+    const dt = parseBR(n.dtImportacao);
+    if(!dt) return false;
+    if(de && dt < de) return false;
+    if(ate && dt > ate) return false;
+    if(filtroEmp && n.empresa !== filtroEmp) return false;
+    if(filtroFin && n.finalidade !== filtroFin) return false;
+    return true;
+  });
+
+  const STATUS_FINAL = ["Desembaraçada","Selada","Recusada"];
+  const resolvidas = notasPeriodo.filter(n => STATUS_FINAL.includes(n.status));
+  const fmtM = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+
+  // Custos
+  const totalCustos = notasPeriodo.reduce((s,n) => {
+    const lancs = n.lancamentos||[];
+    return s + lancs.reduce((a,l)=>a+(parseFloat(l.valor)||0),0);
+  },0);
+  const totalPago = notasPeriodo.reduce((s,n) => {
+    const lancs = (n.lancamentos||[]).filter(l=>l.pago);
+    return s + lancs.reduce((a,l)=>a+(parseFloat(l.valor)||0),0);
+  },0);
+
+  // Custos por tipo
+  const custosPorTipo = {};
+  notasPeriodo.forEach(n => (n.lancamentos||[]).forEach(l => {
+    custosPorTipo[l.tipo] = (custosPorTipo[l.tipo]||0)+(parseFloat(l.valor)||0);
+  }));
+  const tiposSorted = Object.entries(custosPorTipo).sort((a,b)=>b[1]-a[1]);
+  const maxTipo = tiposSorted[0]?.[1]||1;
+
+  // Por empresa
+  const empData = (empresas||[]).map(e => ({
+    nome: e.nome, id: e.id,
+    count: resolvidas.filter(n=>n.empresa===e.id).length,
+    custo: notasPeriodo.filter(n=>n.empresa===e.id).reduce((s,n)=>s+(n.lancamentos||[]).reduce((a,l)=>a+(parseFloat(l.valor)||0),0),0)
+  })).sort((a,b)=>b.count-a.count);
+  const maxEmp = empData[0]?.count||1;
+
+  // Por finalidade
+  const finData = {};
+  notasPeriodo.forEach(n=>{ const f=n.finalidade||"Não identificado"; finData[f]=(finData[f]||0)+1; });
+  const finSorted = Object.entries(finData).sort((a,b)=>b[1]-a[1]);
+  const maxFin = finSorted[0]?.[1]||1;
+
+  // Por CC
+  const ccData = {};
+  notasPeriodo.forEach(n=>{ const c=n.centroCusto||"Sem CC"; ccData[c]=(ccData[c]||0)+(n.lancamentos||[]).reduce((a,l)=>a+(parseFloat(l.valor)||0),0); });
+  const ccSorted = Object.entries(ccData).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxCC = ccSorted[0]?.[1]||1;
+
+  // Tempo médio por mês (últimos 6 meses)
+  function calcTempoMedio(mes, ano) {
+    const noMes = notas.filter(n => {
+      if(!STATUS_FINAL.includes(n.status)) return false;
+      const hist = (n.historico||[]).find(h => STATUS_FINAL.some(s=>h.acao?.includes(s)));
+      if(!hist) return false;
+      const dtFim = parseBR(hist.data?.substring(0,10).split("/").length===3?hist.data.substring(0,10):null);
+      if(!dtFim) return false;
+      return dtFim.getMonth()===mes && dtFim.getFullYear()===ano;
+    });
+    if(!noMes.length) return null;
+    const dias = noMes.map(n=>{
+      const dtImp=parseBR(n.dtImportacao); if(!dtImp) return 0;
+      const hist=(n.historico||[]).find(h=>STATUS_FINAL.some(s=>h.acao?.includes(s)));
+      if(!hist) return 0;
+      const p=hist.data?.substring(0,10); const dtFim=parseBR(p); if(!dtFim) return 0;
+      return Math.max(0,Math.floor((dtFim-dtImp)/86400000));
+    }).filter(d=>d>0);
+    return dias.length ? Math.round(dias.reduce((a,b)=>a+b,0)/dias.length) : null;
+  }
+
+  const meses6 = Array.from({length:6},(_,i)=>{
+    const d=new Date(hoje.getFullYear(),hoje.getMonth()-5+i,1);
+    return { mes:d.getMonth(), ano:d.getFullYear(), label:d.toLocaleString("pt-BR",{month:"short"}).replace(".","") };
+  });
+  const tempoMeses = meses6.map(m=>({ ...m, media: calcTempoMedio(m.mes,m.ano) }));
+  const mediaGeral = (()=>{
+    const vals=resolvidas.map(n=>{
+      const dtImp=parseBR(n.dtImportacao); if(!dtImp) return 0;
+      const hist=(n.historico||[]).find(h=>STATUS_FINAL.some(s=>h.acao?.includes(s)));
+      if(!hist) return 0;
+      const p=hist.data?.substring(0,10); const dtFim=parseBR(p); if(!dtFim) return 0;
+      return Math.max(0,Math.floor((dtFim-dtImp)/86400000));
+    }).filter(d=>d>0);
+    return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
+  })();
+  const maxTempo = Math.max(...tempoMeses.map(m=>m.media||0),1);
+
+  const BAR = ({pct,cor,label}) => (
+    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:7}}>
+      <div style={{width:95,textAlign:"right",fontSize:11,color:"#6b7280",flexShrink:0}}>{label}</div>
+      <div style={{flex:1,height:20,background:"#f0f4f4",borderRadius:5,overflow:"hidden"}}>
+        <div style={{width:`${pct}%`,height:"100%",background:"#1a4a4a",borderRadius:5,display:"flex",alignItems:"center",justifyContent:"flex-end",paddingRight:6}}>
+          <span style={{fontSize:10,color:"#fff",fontWeight:500}}></span>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-5">
+      {/* Header filtros */}
+      <div className="rounded-2xl p-5" style={{ background:"#1a4a4a" }}>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="font-bold text-white text-base">Dashboard Gerencial — DTE/AM</h2>
+            <p className="text-xs mt-1" style={{ color:"#7ecece" }}>Enerwatt Engenharia · Departamento Fiscal</p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <input value={dtDe} onChange={e=>setDtDe(e.target.value)} placeholder="DD/MM/AAAA"
+              className="border rounded-lg px-3 py-1.5 text-sm" style={{ borderColor:"rgba(126,206,206,0.3)",background:"rgba(255,255,255,0.08)",color:"#fff",width:110 }} />
+            <span className="text-xs" style={{ color:"#7ecece" }}>até</span>
+            <input value={dtAte} onChange={e=>setDtAte(e.target.value)} placeholder="DD/MM/AAAA"
+              className="border rounded-lg px-3 py-1.5 text-sm" style={{ borderColor:"rgba(126,206,206,0.3)",background:"rgba(255,255,255,0.08)",color:"#fff",width:110 }} />
+            <select value={filtroEmp} onChange={e=>setFiltroEmp(e.target.value)}
+              className="border rounded-lg px-3 py-1.5 text-sm" style={{ borderColor:"rgba(126,206,206,0.3)",background:"rgba(255,255,255,0.08)",color:"#fff" }}>
+              <option value="">Todas as empresas</option>
+              {(empresas||[]).map(e=><option key={e.id} value={e.id} style={{background:"#1a4a4a"}}>{e.nome}</option>)}
+            </select>
+            <select value={filtroFin} onChange={e=>setFiltroFin(e.target.value)}
+              className="border rounded-lg px-3 py-1.5 text-sm" style={{ borderColor:"rgba(126,206,206,0.3)",background:"rgba(255,255,255,0.08)",color:"#fff" }}>
+              <option value="">Todas as finalidades</option>
+              {["Uso/Consumo","Industrialização","Revenda","Remessa/Transferência","Imobilizado","Não Identificado"].map(f=><option key={f} value={f} style={{background:"#1a4a4a"}}>{f}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid gap-3" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))" }}>
+        {[
+          { label:"Notas no período", val:notasPeriodo.length, sub:"importadas", cor:"#1a4a4a", bg:"#edf5f5", acc:"#1a4a4a" },
+          { label:"Resolvidas", val:resolvidas.length, sub:`${notasPeriodo.length?Math.round(resolvidas.length/notasPeriodo.length*100):0}% do total`, cor:"#2d6a4f", bg:"#f0fdf4", acc:"#2d6a4f" },
+          { label:"Custo total", val:fmtM(totalCustos), sub:`Pago: ${fmtM(totalPago)}`, cor:"#E8450A", bg:"#fff8f0", acc:"#E8450A" },
+          { label:"Pendente pgto", val:fmtM(totalCustos-totalPago), sub:"a pagar", cor:"#b7791f", bg:"#fffbeb", acc:"#b7791f" },
+          { label:"Tempo médio", val:mediaGeral?`${mediaGeral} dias`:"—", sub:"para resolver", cor:"#4db8b8", bg:"#edf5f5", acc:"#4db8b8" },
+        ].map((k,i)=>(
+          <div key={i} className="rounded-2xl p-4 relative overflow-hidden" style={{ background:k.bg, border:`1px solid ${k.cor}22` }}>
+            <div style={{ position:"absolute",top:0,left:0,width:4,height:"100%",background:k.acc,borderRadius:"12px 0 0 12px" }} />
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color:"#6b7280" }}>{k.label}</p>
+            <p className="text-xl font-black mt-1" style={{ color:k.cor }}>{k.val}</p>
+            <p className="text-xs mt-1" style={{ color:"#9ca3af" }}>{k.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Gráficos linha 1 */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Composição custos */}
+        <div className="rounded-2xl border p-5" style={{ borderColor:"#f0f0f0" }}>
+          <h3 className="font-bold text-gray-700 text-sm mb-4">Composição dos custos</h3>
+          {tiposSorted.length === 0 ? <p className="text-xs text-gray-400">Nenhum lançamento no período</p> :
+            tiposSorted.map(([tipo,val],i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                <div style={{width:110,textAlign:"right",fontSize:11,color:"#6b7280",flexShrink:0}}>{tipo}</div>
+                <div style={{flex:1,height:20,background:"#f0f4f4",borderRadius:5,overflow:"hidden"}}>
+                  <div style={{width:`${Math.round(val/maxTipo*100)}%`,height:"100%",background:i===0?"#1a4a4a":i===1?"#E8450A":"#4db8b8",borderRadius:5,display:"flex",alignItems:"center",justifyContent:"flex-end",paddingRight:6}}>
+                    <span style={{fontSize:10,color:"#fff",fontWeight:500}}>{fmtM(val)}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+
+        {/* Por empresa */}
+        <div className="rounded-2xl border p-5" style={{ borderColor:"#f0f0f0" }}>
+          <h3 className="font-bold text-gray-700 text-sm mb-4">Resolvidas por empresa</h3>
+          {empData.map((e,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <div style={{width:110,textAlign:"right",fontSize:11,color:"#6b7280",flexShrink:0}}>{e.nome.replace("FILIAL","Filial").replace("LINHAS DO NORTE","Linhas do Norte")}</div>
+              <div style={{flex:1,height:20,background:"#f0f4f4",borderRadius:5,overflow:"hidden"}}>
+                <div style={{width:`${e.count?Math.round(e.count/maxEmp*100):0}%`,height:"100%",background:i===0?"#1a4a4a":"#4db8b8",borderRadius:5,display:"flex",alignItems:"center",justifyContent:"flex-end",paddingRight:6}}>
+                  <span style={{fontSize:10,color:"#fff",fontWeight:500}}>{e.count}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Gráficos linha 2 */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Por finalidade */}
+        <div className="rounded-2xl border p-5" style={{ borderColor:"#f0f0f0" }}>
+          <h3 className="font-bold text-gray-700 text-sm mb-4">Por finalidade</h3>
+          {finSorted.length===0 ? <p className="text-xs text-gray-400">Sem dados no período</p> :
+            finSorted.map(([fin,cnt],i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                <div style={{width:110,textAlign:"right",fontSize:11,color:"#6b7280",flexShrink:0}}>{fin}</div>
+                <div style={{flex:1,height:20,background:"#f0f4f4",borderRadius:5,overflow:"hidden"}}>
+                  <div style={{width:`${Math.round(cnt/maxFin*100)}%`,height:"100%",background:i===0?"#1a4a4a":i===1?"#E8450A":"#4db8b8",borderRadius:5,display:"flex",alignItems:"center",justifyContent:"flex-end",paddingRight:6}}>
+                    <span style={{fontSize:10,color:"#fff",fontWeight:500}}>{cnt}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+
+        {/* Por CC */}
+        <div className="rounded-2xl border p-5" style={{ borderColor:"#f0f0f0" }}>
+          <h3 className="font-bold text-gray-700 text-sm mb-4">Custo por centro de custo</h3>
+          {ccSorted.length===0 ? <p className="text-xs text-gray-400">Sem dados no período</p> :
+            ccSorted.map(([cc,val],i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                <div style={{width:110,textAlign:"right",fontSize:11,color:"#6b7280",flexShrink:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{cc}</div>
+                <div style={{flex:1,height:20,background:"#f0f4f4",borderRadius:5,overflow:"hidden"}}>
+                  <div style={{width:`${Math.round(val/maxCC*100)}%`,height:"100%",background:i===0?"#1a4a4a":"#7ecece",borderRadius:5,display:"flex",alignItems:"center",justifyContent:"flex-end",paddingRight:6}}>
+                    <span style={{fontSize:10,color:i===0?"#fff":"#1a4a4a",fontWeight:500}}>{fmtM(val)}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+
+      {/* Tempo médio de resolução */}
+      <div className="rounded-2xl border p-5" style={{ borderColor:"#f0f0f0" }}>
+        <h3 className="font-bold text-gray-700 text-sm mb-1">Tempo médio de resolução</h3>
+        <p className="text-xs text-gray-400 mb-4">Dias da importação até Desembaraçada, Selada ou Recusada — por mês</p>
+        <div style={{ display:"flex",alignItems:"flex-end",gap:6,height:100 }}>
+          {tempoMeses.map((m,i)=>{
+            const h = m.media ? Math.round((m.media/maxTempo)*85) : 0;
+            const cor = !m.media?"#e5e7eb":m.media<=15?"#2d6a4f":m.media<=30?"#b7791f":"#c0392b";
+            const isAtual = i===tempoMeses.length-1;
+            return (
+              <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                <span style={{fontSize:10,fontWeight:500,color:m.media?cor:"#d1d5db"}}>{m.media?`${m.media}d`:"—"}</span>
+                <div style={{width:"100%",height:h||4,background:isAtual?"#1a4a4a":cor,borderRadius:"4px 4px 0 0",opacity:isAtual?1:0.7}}/>
+                <span style={{fontSize:9,color:"#9ca3af"}}>{m.label}</span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-4 flex items-center gap-3 pt-3" style={{ borderTop:"1px solid #f0f0f0" }}>
+          <span className="text-xs font-bold px-4 py-1.5 rounded-full text-white" style={{ background:"#1a4a4a" }}>
+            Média geral: {mediaGeral||"—"} {mediaGeral?"dias":""}
+          </span>
+          <span className="text-xs text-gray-400">Importação → status final (Desembaraçada, Selada ou Recusada)</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // MODAL ALTERAR SENHA
 // ============================================================
 function ModalAlterarSenha({ onClose }) {
@@ -2543,6 +2779,7 @@ export default function App() {
       numNota: r.num_nota, cfop: r.cfop, dtEmissao: r.dt_emissao, dtApresentacao: r.dt_apresentacao,
       chave: r.chave, valor: r.valor, qtdeDias: calcDiasEmissao(r.dt_emissao), status: r.status,
       centroCusto: r.centro_custo, codigoCusto: r.codigo_custo || "", finalidade: r.finalidade, responsavel: r.responsavel,
+      lancamentos: r.lancamentos || [],
       noRM: r.no_rm, taxaReanalise: r.taxa_reanalise, taxaDesembaraco: r.taxa_desembaraco,
       icmsAntecipado: r.icms_antecipado, multa: r.multa, juros: r.juros,
       dtReanalise: r.dt_reanalise, dtDesembaraco: r.dt_desembaraco, dtPostergacao: r.dt_postergacao,
@@ -2562,6 +2799,7 @@ export default function App() {
       num_nota: n.numNota, cfop: n.cfop, dt_emissao: n.dtEmissao, dt_apresentacao: n.dtApresentacao,
       chave: n.chave, valor: n.valor, qtde_dias: n.qtdeDias, status: n.status,
       centro_custo: n.centroCusto, codigo_custo: n.codigoCusto || "", finalidade: n.finalidade, responsavel: n.responsavel,
+      lancamentos: n.lancamentos || [],
       no_rm: n.noRM, taxa_reanalise: n.taxaReanalise, taxa_desembaraco: n.taxaDesembaraco,
       icms_antecipado: n.icmsAntecipado, multa: n.multa, juros: n.juros,
       dt_reanalise: n.dtReanalise, dt_desembaraco: n.dtDesembaraco, dt_postergacao: n.dtPostergacao,
@@ -2659,7 +2897,7 @@ export default function App() {
           valor: parseValor(cols[7]),
           qtdeDias: parseInt(cols[8]) || 0,
           status: "Identificada",
-          centroCusto: "", codigoCusto: "", finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "",
+          centroCusto: "", codigoCusto: "", lancamentos: [], finalidade: "", responsavel: "", noRM: null, pagoReanalise: false, pagoDesembaraco: false, pagoIcms: false, pagoMulta10: false, pagoMulta: false, pagoJuros: false, dtSelada: "",
           taxaReanalise: 0, taxaDesembaraco: 0, icmsAntecipado: 0, multa10pct: 0, multa: 0, juros: 0,
           dtReanalise: "", dtDesembaraco: "", dtPostergacao: "", dtVencReanalise: "", dtVencDesembaraco: "", dtVencIcms: "", obs: "",
           dtImportacao: new Date().toLocaleDateString("pt-BR"),
@@ -2696,7 +2934,8 @@ export default function App() {
   const criticas = notasAtivas.filter(n => n.qtdeDias >= 60).length;
 
   const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: "📊" },
+    { id: "dashboard", label: "Painel de Acompanhamento", icon: "🏠" },
+    { id: "gerencial", label: "Dashboard Gerencial", icon: "📊" },
     { id: "notas", label: "Painel de Notas", icon: "📋" },
     { id: "relatorios", label: "Relatórios", icon: "📈" },
     { id: "configuracoes", label: "Configurações", icon: "⚙️" },
@@ -2805,6 +3044,7 @@ export default function App() {
         <div className="flex-1 overflow-y-auto p-6" style={{ background: "#edf5f5" }}>
           {tela === "dashboard" && <Dashboard notas={notas} onVerNota={n => setNotaSelecionada(n)} onIrParaPainel={() => setTela("notas")} />}
           {tela === "notas" && <PainelNotas notas={notas} onVerNota={n => setNotaSelecionada(n)} onImportar={handleImportar} ultimaImportacao={ultimaImportacao} empresas={empresas} />}
+          {tela === "gerencial" && <DashboardGerencial notas={notas} empresas={empresas} />}
           {tela === "relatorios" && <Relatorios notas={notas} />}
           {tela === "configuracoes" && <Configuracoes usuarios={usuarios} onSalvarUsuario={handleSalvarUsuario} onEditarUsuario={handleEditarUsuario} onExcluirUsuario={handleExcluirUsuario} logoUrl={logoUrl} onSalvarLogo={handleSalvarLogo} empresas={empresas} onSalvarEmpresa={handleSalvarEmpresa} perfilAtual={usuarioAtual.perfil} />}
         </div>
