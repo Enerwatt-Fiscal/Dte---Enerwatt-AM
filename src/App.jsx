@@ -674,6 +674,18 @@ function TelaLogin({ onLogin, logoUrl }) {
     }
     // Buscar perfil do usuário na tabela usuarios
     const { data: perfil } = await supabase.from("usuarios").select("*").eq("email", email).single();
+    // Registrar log de acesso
+    const agora = new Date().toISOString();
+    if (perfil?.id) {
+      await supabase.from("usuarios").update({ ultimo_acesso: agora }).eq("id", perfil.id);
+      await supabase.from("logs_acesso").insert({
+        usuario_id: perfil.id,
+        usuario_nome: perfil.nome || email,
+        usuario_email: email,
+        perfil: perfil.perfil || "operador",
+        acessado_em: agora
+      });
+    }
     onLogin({ ...data.user, nome: perfil?.nome || email, perfil: perfil?.perfil || "operador" });
     setCarregando(false);
   };
@@ -2200,8 +2212,6 @@ function DashboardGerencial({ notas, empresas }) {
     const p=d.split("/"); if(p.length!==3) return null;
     return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
   }
-  const de = parseBR(dtDe), ate = parseBR(dtAte);
-
   const deA = parseBR(aplicado.dtDe), ateA = parseBR(aplicado.dtAte);
   const notasPeriodo = notas.filter(n => {
     const dt = parseBR(n.dtImportacao);
@@ -2329,6 +2339,16 @@ function DashboardGerencial({ notas, empresas }) {
               <option value="">Todas as finalidades</option>
               {["Uso/Consumo","Industrialização","Revenda","Remessa/Transferência","Imobilizado","Não Identificado"].map(f=><option key={f} value={f} style={{background:"#1a4a4a"}}>{f}</option>)}
             </select>
+            <button onClick={buscarGerencial}
+              className="px-5 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2"
+              style={{ background:"#E8450A", color:"#fff", border:"none" }}>
+              🔍 Buscar
+            </button>
+            <button onClick={limparGerencial}
+              className="px-4 py-1.5 rounded-lg text-sm font-medium"
+              style={{ border:"1px solid rgba(126,206,206,0.3)", background:"transparent", color:"#7ecece" }}>
+              Limpar
+            </button>
           </div>
         </div>
       </div>
@@ -2449,6 +2469,91 @@ function DashboardGerencial({ notas, empresas }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// ============================================================
+// LOG DE ACESSOS
+// ============================================================
+function LogAcessoBtn() {
+  const [aberto, setAberto] = useState(false);
+  const [logs, setLogs] = useState([]);
+  const [carregando, setCarregando] = useState(false);
+
+  async function carregar() {
+    setCarregando(true);
+    const { data } = await supabase
+      .from("logs_acesso")
+      .select("*")
+      .order("acessado_em", { ascending: false })
+      .limit(50);
+    if (data) setLogs(data);
+    setCarregando(false);
+  }
+
+  function abrir() { setAberto(true); carregar(); }
+
+  const fmtDt = (iso) => {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleString("pt-BR", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit"
+    });
+  };
+
+  return (
+    <>
+      <button onClick={abrir}
+        className="text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5"
+        style={{ background:"#edf5f5", color:"#1a4a4a", border:"1px solid #d0e8e8" }}>
+        📋 Histórico de Acessos
+      </button>
+
+      {aberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background:"rgba(0,0,0,0.5)" }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg m-4 flex flex-col" style={{ maxHeight:"80vh" }}>
+            <div className="flex items-center justify-between p-5 border-b" style={{ borderColor:"#f0f0f0" }}>
+              <div>
+                <h2 className="font-bold text-gray-800">Histórico de Acessos</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Últimos 50 logins registrados</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={carregar} className="text-xs px-3 py-1.5 rounded-lg border font-medium" style={{ borderColor:"#e5e7eb", color:"#374151" }}>
+                  🔄 Atualizar
+                </button>
+                <button onClick={() => setAberto(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-light leading-none">×</button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-4 space-y-2">
+              {carregando && (
+                <div className="text-center py-8 text-gray-400 text-sm">Carregando...</div>
+              )}
+              {!carregando && logs.length === 0 && (
+                <div className="text-center py-8 text-gray-400 text-sm">Nenhum acesso registrado ainda.</div>
+              )}
+              {logs.map((l, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background:"#f8f9fa" }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0" style={{ background:"#1a4a4a" }}>
+                    {(l.usuario_nome||"?").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-gray-800">{l.usuario_nome}</p>
+                    <p className="text-xs text-gray-400">{l.usuario_email}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-xs font-semibold" style={{ color:"#1a4a4a" }}>{fmtDt(l.acessado_em)}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${l.perfil === "admin" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"}`}>
+                      {l.perfil}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -2626,15 +2731,32 @@ function Configuracoes({ usuarios, onSalvarUsuario, onEditarUsuario, onExcluirUs
 
       {/* Usuários */}
       <div className="rounded-2xl border p-5" style={{ borderColor: "#f0f0f0" }}>
-        <h3 className="font-bold text-gray-700 mb-4 text-sm uppercase tracking-wide">Usuários</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wide">Usuários</h3>
+          {perfilAtual === "admin" && (
+            <LogAcessoBtn />
+          )}
+        </div>
         <div className="space-y-2 mb-5">
-          {usuarios.map(u => (
+          {usuarios.map(u => {
+            const ultimoAcesso = u.ultimo_acesso
+              ? new Date(u.ultimo_acesso).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" })
+              : null;
+            return (
             <div key={u.id} className="flex items-center justify-between p-3 rounded-xl" style={{ background: "#f8f9fa" }}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ background: "#E8450A" }}>{u.nome.charAt(0)}</div>
                 <div>
                   <p className="font-semibold text-sm text-gray-800">{u.nome}</p>
                   <p className="text-xs text-gray-400">{u.email}</p>
+                  {ultimoAcesso && (
+                    <p className="text-xs mt-0.5" style={{ color:"#4db8b8" }}>
+                      Último acesso: {ultimoAcesso}
+                    </p>
+                  )}
+                  {!ultimoAcesso && (
+                    <p className="text-xs mt-0.5 text-gray-300">Ainda não acessou</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -2646,7 +2768,8 @@ function Configuracoes({ usuarios, onSalvarUsuario, onEditarUsuario, onExcluirUs
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
         <h4 className="text-sm font-semibold text-gray-600 mb-3">Adicionar Usuário</h4>
         <p className="text-xs text-gray-400 mb-3">A senha inicial será <strong>Enerwatt@2024</strong> — o usuário pode alterar depois.</p>
