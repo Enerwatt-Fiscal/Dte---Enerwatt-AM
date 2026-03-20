@@ -1261,8 +1261,18 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
     empresa: "", status: "", busca: "", dias: "", valor: "",
     tipoData: "emissao", dtDe: "", dtAte: ""
   });
+  const [filtrosAplicados, setFiltrosAplicados] = useState({
+    empresa: "", status: "", busca: "", dias: "", valor: "",
+    tipoData: "emissao", dtDe: "", dtAte: ""
+  });
   const [mostrarImport, setMostrarImport] = useState(false);
   const setF = (k, v) => setFiltros(f => ({ ...f, [k]: v }));
+  const aplicarBusca = () => setFiltrosAplicados({ ...filtros });
+  const limparTudo = () => {
+    const vazio = { empresa: "", status: "", busca: "", dias: "", valor: "", tipoData: "emissao", dtDe: "", dtAte: "" };
+    setFiltros(vazio);
+    setFiltrosAplicados(vazio);
+  };
 
   function parseDateBR2(str) {
     if (!str || str.length !== 10) return null;
@@ -1272,23 +1282,23 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
   }
 
   const filtradas = notas.filter(n => {
-    if (filtros.empresa && n.empresa !== filtros.empresa) return false;
-    if (filtros.status && n.status !== filtros.status) return false;
-    if (filtros.dias === "critico" && n.qtdeDias < 60) return false;
-    if (filtros.dias === "atencao" && (n.qtdeDias < 25 || n.qtdeDias >= 60)) return false;
-    if (filtros.dias === "ok" && n.qtdeDias >= 25) return false;
-    if (filtros.valor === "acima25k" && n.valor <= 25000) return false;
-    if (filtros.valor === "ate25k" && n.valor > 25000) return false;
-    if (filtros.busca) {
-      const b = filtros.busca.toLowerCase();
+    const f = filtrosAplicados;
+    if (f.empresa && n.empresa !== f.empresa) return false;
+    if (f.status && n.status !== f.status) return false;
+    if (f.dias === "critico" && n.qtdeDias < 60) return false;
+    if (f.dias === "atencao" && (n.qtdeDias < 25 || n.qtdeDias >= 60)) return false;
+    if (f.dias === "ok" && n.qtdeDias >= 25) return false;
+    if (f.valor === "acima25k" && n.valor <= 25000) return false;
+    if (f.valor === "ate25k" && n.valor > 25000) return false;
+    if (f.busca) {
+      const b = f.busca.toLowerCase();
       if (!n.razaoSocial.toLowerCase().includes(b) && !n.numNota.includes(b) && !n.fornecedor.includes(b) && !n.chave.includes(b)) return false;
     }
-    // Filtro de data
-    if (filtros.dtDe || filtros.dtAte) {
-      const campoData = filtros.tipoData === "emissao" ? n.dtEmissao : n.dtImportacao;
+    if (f.dtDe || f.dtAte) {
+      const campoData = f.tipoData === "emissao" ? n.dtEmissao : n.dtImportacao;
       const dataRef = parseDateBR2(campoData);
-      const de = parseDateBR2(filtros.dtDe);
-      const ate = parseDateBR2(filtros.dtAte);
+      const de = parseDateBR2(f.dtDe);
+      const ate = parseDateBR2(f.dtAte);
       if (!dataRef) return false;
       if (de && dataRef < de) return false;
       if (ate && dataRef > ate) return false;
@@ -1306,8 +1316,7 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
     setMostrarImport(false);
   };
 
-  const limparFiltros = () => setFiltros({ empresa: "", status: "", busca: "", dias: "", valor: "", tipoData: "emissao", dtDe: "", dtAte: "" });
-  const temFiltroAtivo = filtros.empresa || filtros.status || filtros.busca || filtros.dias || filtros.valor || filtros.dtDe || filtros.dtAte;
+  const temFiltroAtivo = filtrosAplicados.empresa || filtrosAplicados.status || filtrosAplicados.busca || filtrosAplicados.dias || filtrosAplicados.valor || filtrosAplicados.dtDe || filtrosAplicados.dtAte;
 
   return (
     <div className="space-y-4">
@@ -1335,76 +1344,73 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
 
       {/* Filtros */}
       <div className="rounded-2xl border p-4 space-y-3" style={{ borderColor: "#f0f0f0", background: "#fafafa" }}>
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Filtros</p>
-          {temFiltroAtivo && (
-            <button onClick={limparFiltros} className="text-xs font-semibold" style={{ color: "#E8450A" }}>✕ Limpar filtros</button>
-          )}
-        </div>
-
-        {/* Linha 1: busca + empresa + status + prazo */}
-        <div className="flex flex-wrap gap-2">
-          <input placeholder="🔍 Buscar fornecedor, NF ou chave..." value={filtros.busca} onChange={e => setF("busca", e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb", minWidth: 240 }} />
-          <select value={filtros.empresa} onChange={e => setF("empresa", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
-            <option value="">Todas as empresas</option>
-            {EMPRESAS.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
-          </select>
-          <select value={filtros.status} onChange={e => setF("status", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
-            <option value="">Todos os status</option>
-            {STATUS_LIST.map(s => <option key={s}>{s}</option>)}
-          </select>
-          <select value={filtros.dias} onChange={e => setF("dias", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
-            <option value="">Todos os prazos</option>
-            <option value="critico">🔴 Crítico (60+ dias)</option>
-            <option value="atencao">🟡 Atenção (25-59 dias)</option>
-            <option value="ok">🟢 OK (0-24 dias)</option>
-          </select>
-          <select value={filtros.valor} onChange={e => setF("valor", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: filtros.valor ? "#7e3af2" : "#e5e7eb", color: filtros.valor === "acima25k" ? "#7e3af2" : undefined }}>
-            <option value="">Todos os valores</option>
-            <option value="acima25k">⚠️ Acima de R$ 25k</option>
-            <option value="ate25k">Até R$ 25k</option>
-          </select>
-        </div>
-
-        {/* Linha 2: filtro de data */}
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-xs font-semibold text-gray-500">Filtrar por data:</p>
-          <select value={filtros.tipoData} onChange={e => setF("tipoData", e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
-            <option value="emissao">Data de Emissão</option>
-            <option value="importacao">Data de Importação</option>
-          </select>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400">De</span>
-            <input
-              type="text"
-              placeholder="DD/MM/AAAA"
-              value={filtros.dtDe}
-              maxLength={10}
-              onChange={e => {
-                let v = e.target.value.replace(/\D/g, "");
-                if (v.length >= 3) v = v.slice(0,2) + "/" + v.slice(2);
-                if (v.length >= 6) v = v.slice(0,5) + "/" + v.slice(5);
-                setF("dtDe", v.slice(0,10));
-              }}
-              className="border rounded-lg px-3 py-2 text-sm bg-white w-32" style={{ borderColor: filtros.dtDe.length === 10 ? "#E8450A" : "#e5e7eb" }}
-            />
-            <span className="text-xs text-gray-400">Até</span>
-            <input
-              type="text"
-              placeholder="DD/MM/AAAA"
-              value={filtros.dtAte}
-              maxLength={10}
-              onChange={e => {
-                let v = e.target.value.replace(/\D/g, "");
-                if (v.length >= 3) v = v.slice(0,2) + "/" + v.slice(2);
-                if (v.length >= 6) v = v.slice(0,5) + "/" + v.slice(5);
-                setF("dtAte", v.slice(0,10));
-              }}
-              className="border rounded-lg px-3 py-2 text-sm bg-white w-32" style={{ borderColor: filtros.dtAte.length === 10 ? "#E8450A" : "#e5e7eb" }}
-            />
+        <div className="flex flex-wrap gap-2 items-end">
+          <div className="flex flex-col gap-1" style={{ minWidth: 220 }}>
+            <label className="text-xs font-semibold text-gray-500">Busca</label>
+            <input placeholder="Fornecedor, NF ou chave..." value={filtros.busca} onChange={e => setF("busca", e.target.value)}
+              onKeyDown={e => e.key === "Enter" && aplicarBusca()}
+              className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }} />
           </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-500">Empresa</label>
+            <select value={filtros.empresa} onChange={e => setF("empresa", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+              <option value="">Todas</option>
+              {EMPRESAS.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-500">Status</label>
+            <select value={filtros.status} onChange={e => setF("status", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+              <option value="">Todos</option>
+              {STATUS_LIST.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-500">Prazo</label>
+            <select value={filtros.dias} onChange={e => setF("dias", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+              <option value="">Todos</option>
+              <option value="critico">🔴 Crítico 60+d</option>
+              <option value="atencao">🟡 Atenção 25-59d</option>
+              <option value="ok">🟢 OK 0-24d</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-500">Valor</label>
+            <select value={filtros.valor} onChange={e => setF("valor", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+              <option value="">Todos</option>
+              <option value="acima25k">Acima R$ 25k</option>
+              <option value="ate25k">Até R$ 25k</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-500">Data</label>
+            <select value={filtros.tipoData} onChange={e => setF("tipoData", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
+              <option value="emissao">Emissão</option>
+              <option value="importacao">Importação</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-500">De</label>
+            <input type="text" placeholder="DD/MM/AAAA" value={filtros.dtDe} maxLength={10}
+              onChange={e => { let v=e.target.value.replace(/\D/g,""); if(v.length>=3)v=v.slice(0,2)+"/"+v.slice(2); if(v.length>=6)v=v.slice(0,5)+"/"+v.slice(5); setF("dtDe",v.slice(0,10)); }}
+              className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb", width: 110 }} />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-500">Até</label>
+            <input type="text" placeholder="DD/MM/AAAA" value={filtros.dtAte} maxLength={10}
+              onChange={e => { let v=e.target.value.replace(/\D/g,""); if(v.length>=3)v=v.slice(0,2)+"/"+v.slice(2); if(v.length>=6)v=v.slice(0,5)+"/"+v.slice(5); setF("dtAte",v.slice(0,10)); }}
+              className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb", width: 110 }} />
+          </div>
+          <button onClick={aplicarBusca}
+            className="px-5 py-2 rounded-lg text-sm font-bold text-white flex items-center gap-2"
+            style={{ background: "#1a4a4a" }}>
+            🔍 Buscar
+          </button>
+          {(filtros.empresa||filtros.status||filtros.busca||filtros.dias||filtros.valor||filtros.dtDe||filtros.dtAte) && (
+            <button onClick={limparTudo} className="px-4 py-2 rounded-lg text-sm border font-medium text-gray-500" style={{ borderColor: "#e5e7eb" }}>
+              Limpar
+            </button>
+          )}
         </div>
       </div>
 
@@ -1413,53 +1419,35 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
         {temFiltroAtivo && <span className="ml-2 font-semibold" style={{ color: "#E8450A" }}>• filtros ativos</span>}
       </p>
 
-      {/* Tabela */}
-      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "#f0f0f0" }}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ background: "#f8f9fa" }}>
-                {["Empresa", "Fornecedor", "NF", "CFOP", "Dt. Emissão", "Valor", "Dias", "Status", "Centro Custo", "Próximo Passo", ""].map(h => (
-                  <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtradas.map((n, i) => (
-                <tr key={n.id} className="border-t hover:bg-teal-50 transition-colors" style={{ borderColor: "#f0f0f0" }}>
-                  <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">{EMPRESAS.find(e => e.id === n.empresa)?.nome?.split(" - ")[1] || n.empresa}</td>
-                  <td className="px-3 py-3 max-w-xs">
-                    <p className="font-medium text-gray-800 text-xs truncate" title={n.razaoSocial}>{n.razaoSocial}</p>
-                    <p className="text-xs text-gray-400">{n.fornecedor}</p>
-                  </td>
-                  <td className="px-3 py-3 text-xs font-mono text-gray-600 whitespace-nowrap">{n.numNota}</td>
-                  <td className="px-3 py-3 text-xs text-gray-600">{n.cfop}</td>
-                  <td className="px-3 py-3 text-xs text-gray-600 whitespace-nowrap">{n.dtEmissao}</td>
-                  <td className="px-3 py-3 text-xs font-bold whitespace-nowrap" style={{ color: n.valor > 25000 ? "#c0392b" : "#374151" }}>{fmtMoeda(n.valor)}</td>
-                  <td className="px-3 py-3"><AlertBadge dias={n.qtdeDias} /></td>
-                  <td className="px-3 py-3"><Badge status={n.status} /></td>
-                  <td className="px-3 py-3 text-xs text-gray-500">{n.centroCusto || <span className="text-gray-300">—</span>}</td>
-                  <td className="px-3 py-3 text-xs text-gray-500 max-w-xs">
-                    <span className="truncate block" title={getProximoPasso(n)}>{getProximoPasso(n)}</span>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="flex gap-1">
-                      <button onClick={() => onVerNota(n)} className="px-3 py-1 rounded-lg text-xs font-semibold text-white whitespace-nowrap" style={{ background: "#E8450A" }}>
-                        ✏️ Editar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filtradas.length === 0 && (
-            <div className="text-center py-12 text-gray-400">
-              <p className="text-4xl mb-2">📋</p>
-              <p>Nenhuma nota encontrada com os filtros selecionados</p>
+      {/* Cards de notas */}
+      <div className="space-y-2">
+        {filtradas.length === 0 && (
+          <div className="text-center py-12 text-gray-400 rounded-2xl border" style={{ borderColor: "#f0f0f0" }}>
+            <p className="text-4xl mb-2">📋</p>
+            <p>Nenhuma nota encontrada com os filtros selecionados</p>
+          </div>
+        )}
+        {filtradas.map((n) => {
+          const emp = EMPRESAS.find(e => e.id === n.empresa);
+          const empNome = emp?.nome?.split(" - ").pop() || n.empresa;
+          const diasCor = n.qtdeDias >= 60 ? { bg: "#fee2e2", txt: "#991b1b" } : n.qtdeDias >= 25 ? { bg: "#fef9c3", txt: "#854d0e" } : { bg: "#dcfce7", txt: "#166534" };
+          return (
+            <div key={n.id} className="rounded-xl border p-3 flex items-center gap-3 hover:border-teal-300 transition-colors" style={{ borderColor: "#f0f0f0", background: "#fff" }}>
+              <span className="text-xs font-medium px-2 py-1 rounded-full flex-shrink-0" style={{ background: "#edf5f5", color: "#1a4a4a" }}>{empNome}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm text-gray-800 truncate">{n.razaoSocial}</p>
+                <p className="text-xs text-gray-400 mt-0.5">NF {n.numNota} · CFOP {n.cfop} · {n.dtEmissao}</p>
+              </div>
+              <span className="text-sm font-bold flex-shrink-0" style={{ color: n.valor > 25000 ? "#c0392b" : "#374151" }}>{fmtMoeda(n.valor)}</span>
+              <span className="text-xs font-bold px-2 py-1 rounded-md flex-shrink-0" style={{ background: diasCor.bg, color: diasCor.txt }}>{n.qtdeDias}d</span>
+              <Badge status={n.status} />
+              {n.centroCusto && <span className="text-xs text-gray-400 hidden md:block flex-shrink-0 max-w-24 truncate">{n.centroCusto}</span>}
+              <button onClick={() => onVerNota(n)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex-shrink-0" style={{ background: "#E8450A" }}>
+                ✏ Editar
+              </button>
             </div>
-          )}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -2033,81 +2021,85 @@ function ModalConfirmImport({ notasParaImportar, empresas, onConfirmar, onCancel
 // TELA: CONFIGURAÇÕES
 // ============================================================
 // ============================================================
-// ABA FINANCEIRO — LANÇAMENTOS LIVRES
+// ABA FINANCEIRO — LANÇAMENTOS COM MODAL
 // ============================================================
 const TIPOS_LANCAMENTO = ["Taxa de Reanálise","Taxa de Desembaraço","ICMS Antecipado","Multa 10%","Multa Adicional","Juros","Outro"];
 
 function AbaFinanceiro({ form, set, fmtMoeda }) {
   const lancamentos = form.lancamentos || [];
+  const [modalAberto, setModalAberto] = useState(false);
+  const [novoLanc, setNovoLanc] = useState({ tipo:"Taxa de Desembaraço", codigo:"", valor:"", venc:"" });
+  const [confirmExcluir, setConfirmExcluir] = useState(null);
 
-  function updLanc(idx, campo, val) {
-    const novo = lancamentos.map((l, i) => i === idx ? { ...l, [campo]: val } : l);
-    set("lancamentos", novo);
-  }
-  function addLanc() {
-    set("lancamentos", [...lancamentos, { id: Date.now(), tipo: "Taxa de Desembaraço", codigo: "", valor: "", venc: "", pago: false }]);
-  }
-  function remLanc(idx) {
-    set("lancamentos", lancamentos.filter((_, i) => i !== idx));
-  }
   function fmtDate(val) {
     let v = val.replace(/\D/g,"");
     if(v.length>=3) v=v.slice(0,2)+"/"+v.slice(2);
     if(v.length>=6) v=v.slice(0,5)+"/"+v.slice(5);
     return v.slice(0,10);
   }
-  const total = lancamentos.filter(l=>!l.pago).reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
-  const pago  = lancamentos.filter(l=>l.pago).reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
-  const totalGeral = total + pago;
+  function salvarLanc() {
+    if(!novoLanc.valor) return;
+    set("lancamentos", [...lancamentos, { id: Date.now(), ...novoLanc, pago: false }]);
+    setNovoLanc({ tipo:"Taxa de Desembaraço", codigo:"", valor:"", venc:"" });
+    setModalAberto(false);
+  }
+  function togglePago(idx) {
+    set("lancamentos", lancamentos.map((l,i) => i===idx ? {...l, pago:!l.pago} : l));
+  }
+  function excluir(idx) {
+    set("lancamentos", lancamentos.filter((_,i) => i!==idx));
+    setConfirmExcluir(null);
+  }
+
+  const totalGeral = lancamentos.reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+  const pago = lancamentos.filter(l=>l.pago).reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+  const pendente = totalGeral - pago;
 
   return (
     <div className="space-y-3">
-      <div className="text-xs text-gray-400 px-1">Registre todos os lançamentos financeiros desta nota — taxas, ICMS, multas e juros.</div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-gray-400">Taxas, ICMS, multas e juros desta nota.</p>
+        <button onClick={() => setModalAberto(true)}
+          className="px-4 py-1.5 rounded-lg text-xs font-bold text-white"
+          style={{ background:"#1a4a4a" }}>
+          + Novo lançamento
+        </button>
+      </div>
+
+      {/* Lista */}
+      {lancamentos.length === 0 && (
+        <div className="text-center py-8 text-gray-300 rounded-xl border border-dashed" style={{ borderColor:"#e5e7eb" }}>
+          <p className="text-sm">Nenhum lançamento registrado</p>
+          <p className="text-xs mt-1">Clique em "+ Novo lançamento" para começar</p>
+        </div>
+      )}
 
       {lancamentos.map((l, idx) => (
-        <div key={l.id || idx} className="rounded-xl p-4" style={{ background: l.pago ? "#f0fdf4" : "#f8f9fa", border: l.pago ? "1px solid #86efac" : "1px solid #e5e7eb" }}>
-          <div className="flex items-center justify-between mb-3">
-            <select value={l.tipo} onChange={e => updLanc(idx,"tipo",e.target.value)}
-              className="text-xs font-semibold border rounded-lg px-2 py-1.5" style={{ borderColor:"#e5e7eb", color:"#1a4a4a", background:"white" }}>
-              {TIPOS_LANCAMENTO.map(t => <option key={t}>{t}</option>)}
-            </select>
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                <input type="checkbox" checked={l.pago||false} onChange={e=>updLanc(idx,"pago",e.target.checked)} className="w-4 h-4 accent-green-600" />
-                <span className="text-xs font-semibold" style={{ color: l.pago ? "#2d6a4f" : "#9ca3af" }}>{l.pago ? "✅ Pago" : "Pago?"}</span>
-              </label>
-              <button onClick={()=>remLanc(idx)} className="text-gray-300 hover:text-red-400 text-lg font-light leading-none transition-colors">×</button>
-            </div>
+        <div key={l.id||idx} className="flex items-center gap-3 px-4 py-3 rounded-xl"
+          style={{ background: l.pago ? "#f0fdf4" : "#f8f9fa", border: l.pago ? "1px solid #86efac" : "1px solid #e5e7eb" }}>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-800">{l.tipo}</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {l.codigo && <span className="mr-2">Cód: {l.codigo}</span>}
+              {l.venc && <span>Venc: {l.venc}</span>}
+            </p>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className="text-xs font-semibold text-gray-400 uppercase">Código</label>
-              <input value={l.codigo||""} onChange={e=>updLanc(idx,"codigo",e.target.value)}
-                placeholder="Ex: 1.1-IM"
-                className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor:"#e5e7eb" }} />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-400 uppercase">Valor (R$)</label>
-              <input type="number" step="0.01" value={l.valor||""} onChange={e=>updLanc(idx,"valor",e.target.value)}
-                placeholder="0,00"
-                className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor:"#e5e7eb" }} />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-400 uppercase">Vencimento</label>
-              <input value={l.venc||""} onChange={e=>updLanc(idx,"venc",fmtDate(e.target.value))}
-                placeholder="DD/MM/AAAA" maxLength={10}
-                className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: l.venc?.length===10 ? "#E8450A" : "#e5e7eb" }} />
-            </div>
-          </div>
+          <span className="text-sm font-bold" style={{ color: l.pago ? "#2d6a4f" : "#374151" }}>{fmtMoeda(parseFloat(l.valor)||0)}</span>
+          <span className="text-xs font-semibold px-2 py-1 rounded-full flex-shrink-0"
+            style={{ background: l.pago ? "#dcfce7" : "#fef9c3", color: l.pago ? "#166534" : "#854d0e" }}>
+            {l.pago ? "Pago" : "Pendente"}
+          </span>
+          <label className="flex items-center gap-1 cursor-pointer flex-shrink-0">
+            <input type="checkbox" checked={l.pago||false} onChange={()=>togglePago(idx)} className="w-4 h-4 accent-green-600" />
+            <span className="text-xs text-gray-400">Pago</span>
+          </label>
+          <button onClick={() => setConfirmExcluir(idx)}
+            className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">🗑</button>
         </div>
       ))}
 
-      <button onClick={addLanc}
-        className="w-full py-2.5 rounded-xl text-sm font-semibold border-2 border-dashed transition-colors"
-        style={{ borderColor:"#d0e8e8", color:"#4db8b8", background:"transparent" }}>
-        + Adicionar lançamento
-      </button>
-
+      {/* Total */}
       {lancamentos.length > 0 && (
         <div className="p-4 rounded-xl" style={{ background:"#1a4a4a" }}>
           <div className="flex items-center justify-between">
@@ -2117,7 +2109,71 @@ function AbaFinanceiro({ form, set, fmtMoeda }) {
             </div>
             <div className="text-right space-y-1">
               <p className="text-xs" style={{ color:"#7ecece" }}>Pago: <span className="font-semibold text-white">{fmtMoeda(pago)}</span></p>
-              <p className="text-xs" style={{ color:"#f0a500" }}>Pendente: <span className="font-semibold">{fmtMoeda(total)}</span></p>
+              <p className="text-xs" style={{ color:"#f0a500" }}>Pendente: <span className="font-semibold">{fmtMoeda(pendente)}</span></p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal novo lançamento */}
+      {modalAberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background:"rgba(0,0,0,0.5)" }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm m-4">
+            <div className="flex items-center justify-between p-5 border-b" style={{ borderColor:"#f0f0f0" }}>
+              <h2 className="font-bold text-gray-800">Novo Lançamento</h2>
+              <button onClick={()=>setModalAberto(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-light">×</button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Tipo</label>
+                <select value={novoLanc.tipo} onChange={e=>setNovoLanc(l=>({...l,tipo:e.target.value}))}
+                  className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor:"#e5e7eb" }}>
+                  {TIPOS_LANCAMENTO.map(t=><option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Código</label>
+                  <input value={novoLanc.codigo} onChange={e=>setNovoLanc(l=>({...l,codigo:e.target.value}))}
+                    placeholder="Ex: 1.1-IM"
+                    className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor:"#e5e7eb" }} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Valor (R$)</label>
+                  <input type="number" step="0.01" value={novoLanc.valor} onChange={e=>setNovoLanc(l=>({...l,valor:e.target.value}))}
+                    placeholder="0,00"
+                    className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor:"#e5e7eb" }} />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Vencimento</label>
+                <input value={novoLanc.venc} onChange={e=>setNovoLanc(l=>({...l,venc:fmtDate(e.target.value)}))}
+                  placeholder="DD/MM/AAAA" maxLength={10}
+                  className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor: novoLanc.venc?.length===10?"#E8450A":"#e5e7eb" }} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 p-5 border-t" style={{ borderColor:"#f0f0f0" }}>
+              <button onClick={()=>setModalAberto(false)} className="px-4 py-2 rounded-lg border text-sm text-gray-600" style={{ borderColor:"#e5e7eb" }}>Cancelar</button>
+              <button onClick={salvarLanc} disabled={!novoLanc.valor}
+                className="px-6 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+                style={{ background:"#1a4a4a" }}>
+                Salvar lançamento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal confirmar exclusão */}
+      {confirmExcluir !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background:"rgba(0,0,0,0.5)" }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xs m-4 p-6 text-center">
+            <p className="text-2xl mb-3">🗑</p>
+            <p className="font-bold text-gray-800 mb-1">Excluir lançamento?</p>
+            <p className="text-sm text-gray-400 mb-5">Esta ação não pode ser desfeita.</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={()=>setConfirmExcluir(null)} className="px-4 py-2 rounded-lg border text-sm text-gray-600" style={{ borderColor:"#e5e7eb" }}>Cancelar</button>
+              <button onClick={()=>excluir(confirmExcluir)} className="px-5 py-2 rounded-lg text-sm font-semibold text-white" style={{ background:"#c0392b" }}>Excluir</button>
             </div>
           </div>
         </div>
@@ -2135,6 +2191,9 @@ function DashboardGerencial({ notas, empresas }) {
   const [dtAte, setDtAte] = useState(`${String(hoje.getDate()).padStart(2,"0")}/${String(hoje.getMonth()+1).padStart(2,"0")}/${hoje.getFullYear()}`);
   const [filtroEmp, setFiltroEmp] = useState("");
   const [filtroFin, setFiltroFin] = useState("");
+  const [aplicado, setAplicado] = useState({ dtDe: `01/${String(hoje.getMonth()+1).padStart(2,"0")}/${hoje.getFullYear()}`, dtAte: `${String(hoje.getDate()).padStart(2,"0")}/${String(hoje.getMonth()+1).padStart(2,"0")}/${hoje.getFullYear()}`, emp: "", fin: "" });
+  const buscarGerencial = () => setAplicado({ dtDe, dtAte, emp: filtroEmp, fin: filtroFin });
+  const limparGerencial = () => { const d=`01/${String(hoje.getMonth()+1).padStart(2,"0")}/${hoje.getFullYear()}`; const a=`${String(hoje.getDate()).padStart(2,"0")}/${String(hoje.getMonth()+1).padStart(2,"0")}/${hoje.getFullYear()}`; setDtDe(d);setDtAte(a);setFiltroEmp("");setFiltroFin("");setAplicado({dtDe:d,dtAte:a,emp:"",fin:""}); };
 
   function parseBR(d) {
     if(!d||d.length<10) return null;
@@ -2143,13 +2202,14 @@ function DashboardGerencial({ notas, empresas }) {
   }
   const de = parseBR(dtDe), ate = parseBR(dtAte);
 
+  const deA = parseBR(aplicado.dtDe), ateA = parseBR(aplicado.dtAte);
   const notasPeriodo = notas.filter(n => {
     const dt = parseBR(n.dtImportacao);
     if(!dt) return false;
-    if(de && dt < de) return false;
-    if(ate && dt > ate) return false;
-    if(filtroEmp && n.empresa !== filtroEmp) return false;
-    if(filtroFin && n.finalidade !== filtroFin) return false;
+    if(deA && dt < deA) return false;
+    if(ateA && dt > ateA) return false;
+    if(aplicado.emp && n.empresa !== aplicado.emp) return false;
+    if(aplicado.fin && n.finalidade !== aplicado.fin) return false;
     return true;
   });
 
@@ -2934,7 +2994,7 @@ export default function App() {
   const criticas = notasAtivas.filter(n => n.qtdeDias >= 60).length;
 
   const navItems = [
-    { id: "dashboard", label: "Painel de Acompanhamento", icon: "🏠" },
+    { id: "dashboard", label: "Acompanhamento", icon: "🏠" },
     { id: "gerencial", label: "Dashboard Gerencial", icon: "📊" },
     { id: "notas", label: "Painel de Notas", icon: "📋" },
     { id: "relatorios", label: "Relatórios", icon: "📈" },
