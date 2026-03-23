@@ -931,12 +931,32 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase">Nota no RM?</label>
-                <select value={form.noRM === null ? "" : form.noRM ? "sim" : "nao"} onChange={e => set("noRM", e.target.value === "" ? null : e.target.value === "sim")}
+                <select value={form.noRM === null ? "" : form.noRM ? "sim" : "nao"}
+                  onChange={e => {
+                    const val = e.target.value === "" ? null : e.target.value === "sim";
+                    set("noRM", val);
+                    if (val === true && !form.dtLancamentoRm) {
+                      set("dtLancamentoRm", new Date().toLocaleDateString("pt-BR"));
+                    }
+                    if (val !== true) {
+                      set("dtLancamentoRm", "");
+                    }
+                  }}
                   className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }}>
                   <option value="">Não verificado</option>
                   <option value="sim">✅ Sim</option>
                   <option value="nao">❌ Não</option>
                 </select>
+                {form.noRM === true && form.dtLancamentoRm && (
+                  <p className="text-xs mt-1 font-semibold" style={{ color: "#2d6a4f" }}>
+                    📅 Lançado em: {form.dtLancamentoRm}
+                  </p>
+                )}
+                {form.status === "Selada" && form.noRM !== true && (
+                  <p className="text-xs mt-1 font-semibold" style={{ color: "#854d0e" }}>
+                    ⏳ Aguardando lançamento no RM
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase">Código do CC</label>
@@ -1072,6 +1092,15 @@ function DrawerAlertas({ notas, filtro, onClose, onVerNota }) {
     lista = notas.filter(n => noMesAtual2(n.dtImportacao) && (n.taxaReanalise||0)+(n.taxaDesembaraco||0)+(n.icmsAntecipado||0)+(n.multa10pct||0)+(n.multa||0)+(n.juros||0) > 0)
       .sort((a, b) => ((b.taxaReanalise||0)+(b.taxaDesembaraco||0)+(b.icmsAntecipado||0)+(b.multa10pct||0)+(b.multa||0)+(b.juros||0)) - ((a.taxaReanalise||0)+(a.taxaDesembaraco||0)+(a.icmsAntecipado||0)+(a.multa10pct||0)+(a.multa||0)+(a.juros||0)));
     titulo = "📊 Custos em " + nomeMes2;
+  } else if (filtro === "seladasPendenteRm") {
+    function parseBRDias(d) { if(!d||d.length<10)return null; const p=d.split("/"); return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0])); }
+    lista = notas.filter(n => (n.status === "Selada" || n.status === "Desembaraçada") && n.noRM !== true)
+      .sort((a, b) => {
+        const dA = parseBRDias(a.dtSelada), dB = parseBRDias(b.dtSelada);
+        if(!dA && !dB) return 0; if(!dA) return 1; if(!dB) return -1;
+        return dA - dB;
+      });
+    titulo = "📌 Seladas/Desembaraçadas — Pendente RM";
   } else if (filtro === "comCusto") {
     lista = ativas.filter(n => (n.taxaReanalise||0)+(n.taxaDesembaraco||0)+(n.icmsAntecipado||0)+(n.multa||0)+(n.juros||0) > 0)
       .sort((a, b) => ((b.taxaReanalise||0)+(b.taxaDesembaraco||0)+(b.icmsAntecipado||0)+(b.multa||0)+(b.juros||0)) - ((a.taxaReanalise||0)+(a.taxaDesembaraco||0)+(a.icmsAntecipado||0)+(a.multa||0)+(a.juros||0)));
@@ -1159,6 +1188,7 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
   const desembaracadasMes = notas.filter(n =>
     (n.status === "Desembaraçada" || n.status === "Selada") && noMesAtual(n.dtImportacao)
   );
+  const seladasPendenteRm = notas.filter(n => (n.status === "Selada" || n.status === "Desembaraçada") && n.noRM !== true);
 
   // Custos do mês atual — todas as notas importadas no mês, independente do status
   const notasMes = notas.filter(n => noMesAtual(n.dtImportacao));
@@ -1180,6 +1210,7 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
     { label: "Aguard. Pagamento", valor: aguardPag.length, sub: "Financeiro pendente • clique para ver", cor: "#1a56db", bg: "#eff6ff", icon: "💰", filtro: "pagamento", clicavel: true },
     { label: "Concluídas em " + nomeMes, valor: desembaracadasMes.length, sub: "Desembaraçadas + Seladas no mês", cor: "#2d6a4f", bg: "#f0fdf4", icon: "✅", filtro: "concluidoMes", clicavel: desembaracadasMes.length > 0 },
     { label: "Custos em " + nomeMes, valor: fmtMoeda(totalCustosMes), sub: "Notas importadas no mês • clique para ver", cor: "#E8450A", bg: "#f0f8f8", icon: "📊", filtro: "custoMes", clicavel: true },
+    { label: "Seladas/Desembaraçadas — Pendente RM", valor: seladasPendenteRm.length, sub: "Aguardando lançamento no RM", cor: "#854d0e", bg: "#fef9c3", icon: "📌", filtro: "seladasPendenteRm", clicavel: seladasPendenteRm.length > 0 },
   ];
 
   return (
@@ -2443,6 +2474,65 @@ function DashboardGerencial({ notas, empresas }) {
         </div>
       </div>
 
+      {/* Tempo médio Selada → RM */}
+      <div className="rounded-2xl border p-5" style={{ borderColor:"#f0f0f0" }}>
+        <h3 className="font-bold text-gray-700 text-sm mb-1">Tempo médio: Selada → Lançada no RM</h3>
+        <p className="text-xs text-gray-400 mb-4">Dias entre a data de selagem e o lançamento no RM — por mês</p>
+        {(() => {
+          function parseBRG(d) { if(!d||d.length<10)return null; const p=d.split("/"); return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0])); }
+          const meses6rm = Array.from({length:6},(_,i)=>{
+            const d=new Date(hoje.getFullYear(),hoje.getMonth()-5+i,1);
+            return { mes:d.getMonth(), ano:d.getFullYear(), label:d.toLocaleString("pt-BR",{month:"short"}).replace(".","") };
+          });
+          const tempoRmMeses = meses6rm.map(m => {
+            const noMes = notas.filter(n => {
+              if(!n.dtLancamentoRm) return false;
+              const dtLanc = parseBRG(n.dtLancamentoRm);
+              return dtLanc && dtLanc.getMonth()===m.mes && dtLanc.getFullYear()===m.ano;
+            });
+            if(!noMes.length) return { ...m, media: null };
+            const dias = noMes.map(n => {
+              const dtSel=parseBRG(n.dtSelada), dtLanc=parseBRG(n.dtLancamentoRm);
+              if(!dtSel||!dtLanc) return 0;
+              return Math.max(0,Math.floor((dtLanc-dtSel)/86400000));
+            }).filter(d=>d>0);
+            return { ...m, media: dias.length ? Math.round(dias.reduce((a,b)=>a+b,0)/dias.length) : null };
+          });
+          const mediaRm = (()=>{
+            const comData = notas.filter(n=>n.dtLancamentoRm&&n.dtSelada);
+            const vals = comData.map(n=>{
+              const s=parseBRG(n.dtSelada), l=parseBRG(n.dtLancamentoRm);
+              if(!s||!l) return 0;
+              return Math.max(0,Math.floor((l-s)/86400000));
+            }).filter(d=>d>0);
+            return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+          })();
+          const maxTR = Math.max(...tempoRmMeses.map(m=>m.media||0),1);
+          return (<>
+            <div style={{ display:"flex",alignItems:"flex-end",gap:6,height:100 }}>
+              {tempoRmMeses.map((m,i) => {
+                const h = m.media ? Math.round((m.media/maxTR)*85) : 0;
+                const cor = !m.media?"#e5e7eb":m.media<=7?"#2d6a4f":m.media<=15?"#b7791f":"#c0392b";
+                const isAtual = i===tempoRmMeses.length-1;
+                return (
+                  <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                    <span style={{fontSize:10,fontWeight:500,color:m.media?cor:"#d1d5db"}}>{m.media?`${m.media}d`:"—"}</span>
+                    <div style={{width:"100%",height:h||4,background:isAtual?"#1a4a4a":cor,borderRadius:"4px 4px 0 0",opacity:isAtual?1:0.7}}/>
+                    <span style={{fontSize:9,color:"#9ca3af"}}>{m.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 flex items-center gap-3 pt-3" style={{ borderTop:"1px solid #f0f0f0" }}>
+              <span className="text-xs font-bold px-4 py-1.5 rounded-full text-white" style={{ background:"#854d0e" }}>
+                Média: {mediaRm||"—"} {mediaRm?"dias":""}
+              </span>
+              <span className="text-xs text-gray-400">Data de selagem → data de lançamento no RM</span>
+            </div>
+          </>);
+        })()}
+      </div>
+
       {/* Tempo médio de resolução */}
       <div className="rounded-2xl border p-5" style={{ borderColor:"#f0f0f0" }}>
         <h3 className="font-bold text-gray-700 text-sm mb-1">Tempo médio de resolução</h3>
@@ -2970,7 +3060,7 @@ export default function App() {
       pagoReanalise: r.pago_reanalise || false, pagoDesembaraco: r.pago_desembaraco || false,
       pagoIcms: r.pago_icms || false, pagoMulta10: r.pago_multa10 || false,
       pagoMulta: r.pago_multa || false, pagoJuros: r.pago_juros || false,
-      dtSelada: r.dt_selada || "",
+      dtSelada: r.dt_selada || "", dtLancamentoRm: r.dt_lancamento_rm || "",
       obs: r.obs, dtImportacao: r.dt_importacao, historico: r.historico || []
     };
   }
@@ -2990,7 +3080,7 @@ export default function App() {
       pago_reanalise: n.pagoReanalise || false, pago_desembaraco: n.pagoDesembaraco || false,
       pago_icms: n.pagoIcms || false, pago_multa10: n.pagoMulta10 || false,
       pago_multa: n.pagoMulta || false, pago_juros: n.pagoJuros || false,
-      dt_selada: n.dtSelada || "",
+      dt_selada: n.dtSelada || "", dt_lancamento_rm: n.dtLancamentoRm || "",
       obs: n.obs, dt_importacao: n.dtImportacao, historico: n.historico,
       atualizado_em: new Date().toISOString()
     };
