@@ -1213,26 +1213,80 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
     { label: "Seladas/Desembaraçadas — Pendente RM", valor: seladasPendenteRm.length, sub: "Aguardando lançamento no RM", cor: "#854d0e", bg: "#fef9c3", icon: "📌", filtro: "seladasPendenteRm", clicavel: seladasPendenteRm.length > 0 },
   ];
 
+  // Custos pagos/pendentes do mês
+  const totalPagoMes = notasMes.reduce((s, n) => {
+    return s + (n.lancamentos||[]).filter(l=>l.pago).reduce((a,l)=>a+(parseFloat(l.valor)||0),0);
+  }, 0);
+  const totalPendenteMes = totalCustosMes - totalPagoMes;
+
   return (
     <div className="space-y-6">
-      {/* Cards resumo — todos clicáveis onde aplicável */}
-      <div className="grid grid-cols-2 gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
-        {cards.map((c, i) => (
-          <div key={i}
-            onClick={() => c.clicavel && setDrawerFiltro(c.filtro)}
-            className={`rounded-2xl p-4 transition-all ${c.clicavel ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5" : ""}`}
-            style={{ background: c.bg, border: `1px solid ${c.cor}33` }}>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">{c.icon}</span>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-black" style={{ color: c.cor }}>{c.valor}</span>
-                {c.clicavel && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: c.cor + "22", color: c.cor }}>ver →</span>}
+      {/* LAYOUT OPÇÃO D — alertas à esquerda + métricas à direita */}
+      <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
+
+        {/* Coluna esquerda — alertas clicáveis */}
+        <div className="space-y-2">
+          {cards.map((c, i) => (
+            <div key={i}
+              onClick={() => c.clicavel && setDrawerFiltro(c.filtro)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${c.clicavel ? "cursor-pointer hover:shadow-sm hover:-translate-y-0.5" : ""}`}
+              style={{ background: c.bg, borderColor: c.cor + "44" }}>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm" style={{ color: c.cor }}>{c.label}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{c.sub}</p>
               </div>
+              <span className="text-2xl font-black flex-shrink-0" style={{ color: c.cor }}>{c.valor}</span>
+              {c.clicavel && <span className="text-base text-gray-300 flex-shrink-0">›</span>}
             </div>
-            <p className="font-semibold text-gray-700 mt-2 text-sm">{c.label}</p>
-            <p className="text-xs text-gray-400">{c.sub}</p>
+          ))}
+        </div>
+
+        {/* Coluna direita — métricas secundárias */}
+        <div className="space-y-3">
+          {/* Concluídas + Total */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl p-4" style={{ background: "#f0fdf4", border: "1px solid #d1fae5" }}>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Concluídas</p>
+              <p className="text-2xl font-black mt-1" style={{ color: "#2d6a4f" }}>{desembaracadasMes.length}</p>
+              <p className="text-xs text-gray-400 mt-0.5">em {nomeMes}</p>
+            </div>
+            <div className="rounded-xl p-4" style={{ background: "#edf5f5", border: "1px solid #d0e8e8" }}>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Total notas</p>
+              <p className="text-2xl font-black mt-1" style={{ color: "#1a4a4a" }}>{notas.length}</p>
+              <p className="text-xs text-gray-400 mt-0.5">importadas</p>
+            </div>
           </div>
-        ))}
+
+          {/* Custos do mês */}
+          <div className="rounded-xl p-4 flex items-center justify-between" style={{ background: "#fff8f0", border: "1px solid #ffd6b8" }}>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Custos em {nomeMes}</p>
+              <p className="text-xl font-black mt-1" style={{ color: "#E8450A" }}>{fmtMoeda(totalCustosMes)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-semibold" style={{ color: "#2d6a4f" }}>Pago: {fmtMoeda(totalPagoMes)}</p>
+              <p className="text-xs font-semibold mt-1" style={{ color: "#E8450A" }}>Pend: {fmtMoeda(totalPendenteMes)}</p>
+            </div>
+          </div>
+
+          {/* Mini-gráfico por empresa */}
+          <div className="rounded-xl p-4" style={{ background: "#1a4a4a" }}>
+            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "#7ecece" }}>Notas ativas por empresa</p>
+            {porEmpresa.map((e, i) => {
+              const maxTotal = Math.max(...porEmpresa.map(x => x.total), 1);
+              const cores = ["#4db8b8", "#7ecece", "#E8450A"];
+              return (
+                <div key={e.id} className="flex items-center gap-3 mb-2 last:mb-0 cursor-pointer" onClick={() => setDrawerFiltro(`empresa_${e.id}`)}>
+                  <span className="text-xs text-white flex-shrink-0" style={{ width: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.nome.split(" - ").pop()}</span>
+                  <div className="flex-1 rounded-full overflow-hidden" style={{ height: 7, background: "rgba(255,255,255,0.1)" }}>
+                    <div style={{ width: `${Math.round(e.total/maxTotal*100)}%`, height: "100%", background: cores[i] || "#4db8b8", borderRadius: 4 }} />
+                  </div>
+                  <span className="text-xs flex-shrink-0" style={{ color: "#7ecece", minWidth: 16, textAlign: "right" }}>{e.total}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Por empresa — cada linha clicável */}
