@@ -2139,15 +2139,27 @@ function AbaObs({ form, set, usuarioAtual }) {
   return (
     <div className="mt-1 rounded-xl overflow-hidden border" style={{ borderColor: "#e5e7eb" }}>
       {historico.length > 0 && (
-        <div className="divide-y" style={{ borderColor: "#f0f0f0", maxHeight: 180, overflowY: "auto" }}>
+        <div className="divide-y" style={{ borderColor: "#f0f0f0", maxHeight: 200, overflowY: "auto" }}>
           {historico.map((h, i) => (
-            <div key={i} className="px-3 py-2.5" style={{ background: i === 0 ? "#f0f8f8" : "#fafafa" }}>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-semibold" style={{ color: "#1a4a4a" }}>{h.usuario}</span>
-                <span className="text-xs text-gray-400">·</span>
-                <span className="text-xs text-gray-400">{h.data}</span>
+            <div key={i} className="px-3 py-2.5 flex gap-2" style={{ background: i === 0 ? "#f0f8f8" : "#fafafa" }}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-semibold" style={{ color: "#1a4a4a" }}>{h.usuario}</span>
+                  <span className="text-xs text-gray-400">·</span>
+                  <span className="text-xs text-gray-400">{h.data}</span>
+                </div>
+                <p className="text-sm text-gray-700" style={{ whiteSpace: "pre-wrap" }}>{h.texto}</p>
               </div>
-              <p className="text-sm text-gray-700" style={{ whiteSpace: "pre-wrap" }}>{h.texto}</p>
+              <button
+                onClick={() => {
+                  if(window.confirm("Excluir esta observação?")) {
+                    set("obsHistorico", historico.filter((_, j) => j !== i));
+                  }
+                }}
+                className="text-gray-200 hover:text-red-400 transition-colors flex-shrink-0 text-sm leading-none mt-0.5"
+                title="Excluir observação">
+                🗑
+              </button>
             </div>
           ))}
         </div>
