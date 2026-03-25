@@ -1008,8 +1008,7 @@ function ModalNota({ nota, onClose, onSave, usuarioAtual }) {
               )}
               <div className="col-span-2">
                 <label className="text-xs font-semibold text-gray-500 uppercase">Observações</label>
-                <textarea value={form.obs} onChange={e => set("obs", e.target.value)} rows={3}
-                  className="mt-1 w-full border rounded-lg p-2 text-sm" style={{ borderColor: "#e5e7eb" }} />
+                <AbaObs form={form} set={set} usuarioAtual={usuarioAtual} />
               </div>
             </div>
           )}
@@ -2118,6 +2117,64 @@ function ModalConfirmImport({ notasParaImportar, empresas, onConfirmar, onCancel
 // TELA: CONFIGURAÇÕES
 // ============================================================
 // ============================================================
+// ABA OBSERVAÇÕES — HISTÓRICO ACUMULADO
+// ============================================================
+function AbaObs({ form, set, usuarioAtual }) {
+  const [novaObs, setNovaObs] = useState("");
+  const historico = form.obsHistorico || [];
+
+  function adicionar() {
+    if (!novaObs.trim()) return;
+    const agora = new Date();
+    const dtHora = agora.toLocaleDateString("pt-BR") + " " + agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    const novoItem = {
+      texto: novaObs.trim(),
+      usuario: usuarioAtual?.nome || "Usuário",
+      data: dtHora
+    };
+    set("obsHistorico", [novoItem, ...historico]);
+    setNovaObs("");
+  }
+
+  return (
+    <div className="mt-1 rounded-xl overflow-hidden border" style={{ borderColor: "#e5e7eb" }}>
+      {historico.length > 0 && (
+        <div className="divide-y" style={{ borderColor: "#f0f0f0", maxHeight: 180, overflowY: "auto" }}>
+          {historico.map((h, i) => (
+            <div key={i} className="px-3 py-2.5" style={{ background: i === 0 ? "#f0f8f8" : "#fafafa" }}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-semibold" style={{ color: "#1a4a4a" }}>{h.usuario}</span>
+                <span className="text-xs text-gray-400">·</span>
+                <span className="text-xs text-gray-400">{h.data}</span>
+              </div>
+              <p className="text-sm text-gray-700" style={{ whiteSpace: "pre-wrap" }}>{h.texto}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="p-2" style={{ background: "#f8f9fa", borderTop: historico.length > 0 ? "1px solid #f0f0f0" : "none" }}>
+        <textarea
+          value={novaObs}
+          onChange={e => setNovaObs(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" && e.ctrlKey) adicionar(); }}
+          rows={2}
+          placeholder="Adicionar nova observação... (Ctrl+Enter para salvar)"
+          className="w-full border rounded-lg p-2 text-sm resize-none"
+          style={{ borderColor: "#e5e7eb", background: "#fff" }}
+        />
+        <div className="flex justify-end mt-1.5">
+          <button onClick={adicionar} disabled={!novaObs.trim()}
+            className="px-4 py-1.5 rounded-lg text-xs font-bold text-white disabled:opacity-40"
+            style={{ background: "#1a4a4a" }}>
+            + Adicionar obs.
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // ABA FINANCEIRO — LANÇAMENTOS COM MODAL
 // ============================================================
 const TIPOS_LANCAMENTO = ["Taxa de Reanálise","Taxa de Desembaraço","ICMS Antecipado","Multa 10%","Multa Adicional","Juros","Outro"];
@@ -3115,7 +3172,7 @@ export default function App() {
       pagoIcms: r.pago_icms || false, pagoMulta10: r.pago_multa10 || false,
       pagoMulta: r.pago_multa || false, pagoJuros: r.pago_juros || false,
       dtSelada: r.dt_selada || "", dtLancamentoRm: r.dt_lancamento_rm || "",
-      obs: r.obs, dtImportacao: r.dt_importacao, historico: r.historico || []
+      obs: r.obs, obsHistorico: r.obs_historico || [], dtImportacao: r.dt_importacao, historico: r.historico || []
     };
   }
 
@@ -3135,7 +3192,7 @@ export default function App() {
       pago_icms: n.pagoIcms || false, pago_multa10: n.pagoMulta10 || false,
       pago_multa: n.pagoMulta || false, pago_juros: n.pagoJuros || false,
       dt_selada: n.dtSelada || "", dt_lancamento_rm: n.dtLancamentoRm || "",
-      obs: n.obs, dt_importacao: n.dtImportacao, historico: n.historico,
+      obs: n.obs, obs_historico: n.obsHistorico || [], dt_importacao: n.dtImportacao, historico: n.historico,
       atualizado_em: new Date().toISOString()
     };
   }
