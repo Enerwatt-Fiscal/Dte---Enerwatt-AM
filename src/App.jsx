@@ -2187,15 +2187,25 @@ function AbaObs({ form, set, usuarioAtual }) {
 }
 
 // ============================================================
-// ABA FINANCEIRO — LANÇAMENTOS COM MODAL
+// ABA FINANCEIRO — LANÇAMENTOS COM MODAL E CAMPOS DETALHADOS
 // ============================================================
 const TIPOS_LANCAMENTO = ["Taxa de Reanálise","Taxa de Desembaraço","ICMS Antecipado","Multa 10%","Multa Adicional","Juros","Outro"];
+
+function calcTotalLanc(l) {
+  return (parseFloat(l.valorPrincipal)||0) + (parseFloat(l.juros)||0) + (parseFloat(l.multa)||0) + (parseFloat(l.taxaExpediente)||0);
+}
+
+function getLancTotal(l) {
+  if (l.valorPrincipal !== undefined) return calcTotalLanc(l);
+  return parseFloat(l.valor) || 0;
+}
 
 function AbaFinanceiro({ form, set, fmtMoeda }) {
   const lancamentos = form.lancamentos || [];
   const [modalAberto, setModalAberto] = useState(false);
-  const [novoLanc, setNovoLanc] = useState({ tipo:"Taxa de Desembaraço", codigo:"", valor:"", venc:"" });
   const [confirmExcluir, setConfirmExcluir] = useState(null);
+  const lancVazio = { tipo:"Taxa de Desembaraço", codigo:"", valorPrincipal:"", juros:"", multa:"", taxaExpediente:"", venc:"" };
+  const [novoLanc, setNovoLanc] = useState({...lancVazio});
 
   function fmtDate(val) {
     let v = val.replace(/\D/g,"");
@@ -2204,9 +2214,10 @@ function AbaFinanceiro({ form, set, fmtMoeda }) {
     return v.slice(0,10);
   }
   function salvarLanc() {
-    if(!novoLanc.valor) return;
-    set("lancamentos", [...lancamentos, { id: Date.now(), ...novoLanc, pago: false }]);
-    setNovoLanc({ tipo:"Taxa de Desembaraço", codigo:"", valor:"", venc:"" });
+    const total = calcTotalLanc(novoLanc);
+    if(!total) return;
+    set("lancamentos", [...lancamentos, { id: Date.now(), ...novoLanc, valor: String(total), pago: false }]);
+    setNovoLanc({...lancVazio});
     setModalAberto(false);
   }
   function togglePago(idx) {
@@ -2217,23 +2228,21 @@ function AbaFinanceiro({ form, set, fmtMoeda }) {
     setConfirmExcluir(null);
   }
 
-  const totalGeral = lancamentos.reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
-  const pago = lancamentos.filter(l=>l.pago).reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+  const totalGeral = lancamentos.reduce((s,l)=>s+getLancTotal(l),0);
+  const pago = lancamentos.filter(l=>l.pago).reduce((s,l)=>s+getLancTotal(l),0);
   const pendente = totalGeral - pago;
 
   return (
     <div className="space-y-3">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-gray-400">Taxas, ICMS, multas e juros desta nota.</p>
-        <button onClick={() => setModalAberto(true)}
+        <button onClick={() => { setNovoLanc({...lancVazio}); setModalAberto(true); }}
           className="px-4 py-1.5 rounded-lg text-xs font-bold text-white"
           style={{ background:"#1a4a4a" }}>
           + Novo lançamento
         </button>
       </div>
 
-      {/* Lista */}
       {lancamentos.length === 0 && (
         <div className="text-center py-8 text-gray-300 rounded-xl border border-dashed" style={{ borderColor:"#e5e7eb" }}>
           <p className="text-sm">Nenhum lançamento registrado</p>
@@ -2241,31 +2250,49 @@ function AbaFinanceiro({ form, set, fmtMoeda }) {
         </div>
       )}
 
-      {lancamentos.map((l, idx) => (
-        <div key={l.id||idx} className="flex items-center gap-3 px-4 py-3 rounded-xl"
-          style={{ background: l.pago ? "#f0fdf4" : "#f8f9fa", border: l.pago ? "1px solid #86efac" : "1px solid #e5e7eb" }}>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-800">{l.tipo}</p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {l.codigo && <span className="mr-2">Cód: {l.codigo}</span>}
-              {l.venc && <span>Venc: {l.venc}</span>}
-            </p>
+      {lancamentos.map((l, idx) => {
+        const tot = getLancTotal(l);
+        const temDetalhes = l.valorPrincipal !== undefined;
+        return (
+          <div key={l.id||idx} className="rounded-xl overflow-hidden"
+            style={{ border: l.pago ? "1px solid #86efac" : "1px solid #e5e7eb" }}>
+            <div className="flex items-center gap-3 px-4 py-3"
+              style={{ background: l.pago ? "#f0fdf4" : "#f8f9fa" }}>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-800">{l.tipo}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {l.codigo && <span className="mr-2">Cód: {l.codigo}</span>}
+                  {l.venc && <span>Venc: {l.venc}</span>}
+                </p>
+              </div>
+              <span className="text-sm font-bold" style={{ color: l.pago ? "#2d6a4f" : "#374151" }}>{fmtMoeda(tot)}</span>
+              <span className="text-xs font-semibold px-2 py-1 rounded-full flex-shrink-0"
+                style={{ background: l.pago ? "#dcfce7" : "#fef9c3", color: l.pago ? "#166534" : "#854d0e" }}>
+                {l.pago ? "Pago" : "Pendente"}
+              </span>
+              <label className="flex items-center gap-1 cursor-pointer flex-shrink-0">
+                <input type="checkbox" checked={l.pago||false} onChange={()=>togglePago(idx)} className="w-4 h-4 accent-green-600" />
+                <span className="text-xs text-gray-400">Pago</span>
+              </label>
+              <button onClick={() => setConfirmExcluir(idx)}
+                className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">🗑</button>
+            </div>
+            {temDetalhes && (
+              <div className="px-4 py-2 grid grid-cols-4 gap-3" style={{ background:"#f0f0f0", borderTop:"1px solid #e5e7eb" }}>
+                {[["Principal", l.valorPrincipal],["Juros", l.juros],["Multa", l.multa],["Expediente", l.taxaExpediente]].map(([k,v]) => (
+                  <div key={k} className="text-center">
+                    <p className="text-xs text-gray-400">{k}</p>
+                    <p className="text-xs font-semibold" style={{ color: parseFloat(v)>0 ? "#1a4a4a" : "#d1d5db" }}>
+                      {fmtMoeda(parseFloat(v)||0)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <span className="text-sm font-bold" style={{ color: l.pago ? "#2d6a4f" : "#374151" }}>{fmtMoeda(parseFloat(l.valor)||0)}</span>
-          <span className="text-xs font-semibold px-2 py-1 rounded-full flex-shrink-0"
-            style={{ background: l.pago ? "#dcfce7" : "#fef9c3", color: l.pago ? "#166534" : "#854d0e" }}>
-            {l.pago ? "Pago" : "Pendente"}
-          </span>
-          <label className="flex items-center gap-1 cursor-pointer flex-shrink-0">
-            <input type="checkbox" checked={l.pago||false} onChange={()=>togglePago(idx)} className="w-4 h-4 accent-green-600" />
-            <span className="text-xs text-gray-400">Pago</span>
-          </label>
-          <button onClick={() => setConfirmExcluir(idx)}
-            className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">🗑</button>
-        </div>
-      ))}
+        );
+      })}
 
-      {/* Total */}
       {lancamentos.length > 0 && (
         <div className="p-4 rounded-xl" style={{ background:"#1a4a4a" }}>
           <div className="flex items-center justify-between">
@@ -2281,12 +2308,14 @@ function AbaFinanceiro({ form, set, fmtMoeda }) {
         </div>
       )}
 
-      {/* Modal novo lançamento */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background:"rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm m-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md m-4">
             <div className="flex items-center justify-between p-5 border-b" style={{ borderColor:"#f0f0f0" }}>
-              <h2 className="font-bold text-gray-800">Novo Lançamento</h2>
+              <div>
+                <h2 className="font-bold text-gray-800">Novo Lançamento</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Total: <strong style={{color:"#1a4a4a"}}>{fmtMoeda(calcTotalLanc(novoLanc))}</strong></p>
+              </div>
               <button onClick={()=>setModalAberto(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-light">×</button>
             </div>
             <div className="p-5 space-y-4">
@@ -2299,28 +2328,52 @@ function AbaFinanceiro({ form, set, fmtMoeda }) {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 uppercase">Código</label>
-                  <input value={novoLanc.codigo} onChange={e=>setNovoLanc(l=>({...l,codigo:e.target.value}))}
-                    placeholder="Ex: 1.1-IM"
-                    className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor:"#e5e7eb" }} />
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Valor Principal</label>
+                  <input type="number" step="0.01" value={novoLanc.valorPrincipal}
+                    onChange={e=>setNovoLanc(l=>({...l,valorPrincipal:e.target.value}))}
+                    placeholder="0,00" className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor:"#e5e7eb" }} />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 uppercase">Valor (R$)</label>
-                  <input type="number" step="0.01" value={novoLanc.valor} onChange={e=>setNovoLanc(l=>({...l,valor:e.target.value}))}
-                    placeholder="0,00"
-                    className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor:"#e5e7eb" }} />
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Juros</label>
+                  <input type="number" step="0.01" value={novoLanc.juros}
+                    onChange={e=>setNovoLanc(l=>({...l,juros:e.target.value}))}
+                    placeholder="0,00" className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor:"#e5e7eb" }} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Multa</label>
+                  <input type="number" step="0.01" value={novoLanc.multa}
+                    onChange={e=>setNovoLanc(l=>({...l,multa:e.target.value}))}
+                    placeholder="0,00" className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor:"#e5e7eb" }} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Taxa de Expediente</label>
+                  <input type="number" step="0.01" value={novoLanc.taxaExpediente}
+                    onChange={e=>setNovoLanc(l=>({...l,taxaExpediente:e.target.value}))}
+                    placeholder="0,00" className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor:"#e5e7eb" }} />
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase">Vencimento</label>
-                <input value={novoLanc.venc} onChange={e=>setNovoLanc(l=>({...l,venc:fmtDate(e.target.value)}))}
-                  placeholder="DD/MM/AAAA" maxLength={10}
-                  className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor: novoLanc.venc?.length===10?"#E8450A":"#e5e7eb" }} />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Código</label>
+                  <input value={novoLanc.codigo} onChange={e=>setNovoLanc(l=>({...l,codigo:e.target.value}))}
+                    placeholder="Ex: 1.1-IM" className="mt-1 w-full border rounded-lg p-2.5 text-sm" style={{ borderColor:"#e5e7eb" }} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Vencimento</label>
+                  <input value={novoLanc.venc} onChange={e=>setNovoLanc(l=>({...l,venc:fmtDate(e.target.value)}))}
+                    placeholder="DD/MM/AAAA" maxLength={10}
+                    className="mt-1 w-full border rounded-lg p-2.5 text-sm"
+                    style={{ borderColor: novoLanc.venc?.length===10?"#E8450A":"#e5e7eb" }} />
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl" style={{ background:"#edf5f5" }}>
+                <span className="text-xs font-semibold text-gray-500">Total do lançamento</span>
+                <span className="text-lg font-black" style={{ color:"#1a4a4a" }}>{fmtMoeda(calcTotalLanc(novoLanc))}</span>
               </div>
             </div>
             <div className="flex justify-end gap-3 p-5 border-t" style={{ borderColor:"#f0f0f0" }}>
               <button onClick={()=>setModalAberto(false)} className="px-4 py-2 rounded-lg border text-sm text-gray-600" style={{ borderColor:"#e5e7eb" }}>Cancelar</button>
-              <button onClick={salvarLanc} disabled={!novoLanc.valor}
+              <button onClick={salvarLanc} disabled={!calcTotalLanc(novoLanc)}
                 className="px-6 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
                 style={{ background:"#1a4a4a" }}>
                 Salvar lançamento
@@ -2330,7 +2383,6 @@ function AbaFinanceiro({ form, set, fmtMoeda }) {
         </div>
       )}
 
-      {/* Modal confirmar exclusão */}
       {confirmExcluir !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background:"rgba(0,0,0,0.5)" }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xs m-4 p-6 text-center">
