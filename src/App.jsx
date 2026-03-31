@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "./supabase";
 
 // Exportação Excel via SheetJS (carregado via CDN no index.html)
@@ -1368,7 +1368,7 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
   const limparTudo = () => { setFiltros({...filtroVazio}); setFiltrosAplicados({...filtroVazio}); setDropAberto(null); };
 
   // Fechar dropdown ao clicar fora
-  const dropRef = React.useRef ? React.useRef(null) : { current: null };
+  const dropRef = useRef(null);
 
   function parseDateBR2(str) {
     if (!str || str.length !== 10) return null;
@@ -1446,7 +1446,7 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
 
       {/* Filtros */}
       <div className="rounded-2xl border p-4" style={{ borderColor: "#f0f0f0", background: "#fafafa" }}
-        onClick={e => { if(!e.target.closest("[data-drop]")) setDropAberto(null); }}>
+        onClick={() => setDropAberto(null)}>
         <div className="flex flex-wrap gap-2 items-end">
 
           {/* Busca */}
@@ -1459,12 +1459,12 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
           </div>
 
           {/* Empresa multi-select */}
-          <div className="flex flex-col gap-1" data-drop>
+          <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-gray-500">
               Empresa {filtros.empresas.length > 0 && <span style={{color:"#1a4a4a"}}>({filtros.empresas.length})</span>}
             </label>
-            <div style={{position:"relative"}} data-drop>
-              <button data-drop onClick={e=>{e.stopPropagation();setDropAberto(dropAberto==="empresa"?null:"empresa");}}
+            <div style={{position:"relative"}}>
+              <button onClick={e=>{e.stopPropagation();setDropAberto(dropAberto==="empresa"?null:"empresa");}}
                 className="border rounded-lg px-3 py-2 text-sm bg-white flex items-center gap-2"
                 style={{borderColor: filtros.empresas.length?"#1a4a4a":"#e5e7eb", minWidth:160}}>
                 <span className="flex-1 text-left truncate">
@@ -1473,28 +1473,28 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
                 <span style={{fontSize:10,opacity:.5}}>▾</span>
               </button>
               {dropAberto==="empresa" && (
-                <div data-drop style={{position:"absolute",top:"100%",left:0,zIndex:50,marginTop:4,background:"white",border:"0.5px solid #e5e7eb",borderRadius:10,padding:6,minWidth:200,boxShadow:"0 4px 12px rgba(0,0,0,0.1)"}}>
+                <div onClick={e=>e.stopPropagation()} style={{position:"absolute",top:"100%",left:0,zIndex:50,marginTop:4,background:"white",border:"0.5px solid #e5e7eb",borderRadius:10,padding:6,minWidth:200,boxShadow:"0 4px 12px rgba(0,0,0,0.1)"}}>
                   {EMPRESAS.map(e=>(
-                    <label key={e.id} data-drop style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:6,cursor:"pointer",background:filtros.empresas.includes(e.id)?"#edf5f5":"transparent",fontSize:12}}>
-                      <input type="checkbox" data-drop checked={filtros.empresas.includes(e.id)}
+                    <label key={e.id} onClick={ev=>ev.stopPropagation()} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:6,cursor:"pointer",background:filtros.empresas.includes(e.id)?"#edf5f5":"transparent",fontSize:12}}>
+                      <input type="checkbox" checked={filtros.empresas.includes(e.id)}
                         onChange={()=>setF("empresas", toggleArr(filtros.empresas, e.id))}
                         style={{width:14,height:14,accentColor:"#1a4a4a"}} />
                       {e.nome.split(" - ").pop()}
                     </label>
                   ))}
-                  {filtros.empresas.length>0 && <button data-drop onClick={()=>setF("empresas",[])} style={{width:"100%",fontSize:11,padding:"5px",borderRadius:6,border:"0.5px solid #e5e7eb",background:"transparent",cursor:"pointer",marginTop:4,color:"#6b7280"}}>Limpar</button>}
+                  {filtros.empresas.length>0 && <button onClick={()=>setF("empresas",[])} style={{width:"100%",fontSize:11,padding:"5px",borderRadius:6,border:"0.5px solid #e5e7eb",background:"transparent",cursor:"pointer",marginTop:4,color:"#6b7280"}}>Limpar</button>}
                 </div>
               )}
             </div>
           </div>
 
           {/* Status multi-select */}
-          <div className="flex flex-col gap-1" data-drop>
+          <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-gray-500">
               Status {filtros.statuses.length > 0 && <span style={{color:"#1a4a4a"}}>({filtros.statuses.length})</span>}
             </label>
-            <div style={{position:"relative"}} data-drop>
-              <button data-drop onClick={e=>{e.stopPropagation();setDropAberto(dropAberto==="status"?null:"status");}}
+            <div style={{position:"relative"}}>
+              <button onClick={e=>{e.stopPropagation();setDropAberto(dropAberto==="status"?null:"status");}}
                 className="border rounded-lg px-3 py-2 text-sm bg-white flex items-center gap-2"
                 style={{borderColor: filtros.statuses.length?"#1a4a4a":"#e5e7eb", minWidth:170}}>
                 <span className="flex-1 text-left truncate">
@@ -1503,12 +1503,12 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
                 <span style={{fontSize:10,opacity:.5}}>▾</span>
               </button>
               {dropAberto==="status" && (
-                <div data-drop style={{position:"absolute",top:"100%",left:0,zIndex:50,marginTop:4,background:"white",border:"0.5px solid #e5e7eb",borderRadius:10,padding:6,minWidth:210,boxShadow:"0 4px 12px rgba(0,0,0,0.1)",maxHeight:280,overflowY:"auto"}}>
+                <div onClick={e=>e.stopPropagation()} style={{position:"absolute",top:"100%",left:0,zIndex:50,marginTop:4,background:"white",border:"0.5px solid #e5e7eb",borderRadius:10,padding:6,minWidth:210,boxShadow:"0 4px 12px rgba(0,0,0,0.1)",maxHeight:280,overflowY:"auto"}}>
                   {STATUS_LIST.map(s=>{
                     const cnt = notas.filter(n=>n.status===s).length;
                     return (
-                      <label key={s} data-drop style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:6,cursor:"pointer",background:filtros.statuses.includes(s)?"#edf5f5":"transparent",fontSize:12}}>
-                        <input type="checkbox" data-drop checked={filtros.statuses.includes(s)}
+                      <label key={s} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:6,cursor:"pointer",background:filtros.statuses.includes(s)?"#edf5f5":"transparent",fontSize:12}}>
+                        <input type="checkbox" checked={filtros.statuses.includes(s)}
                           onChange={()=>setF("statuses", toggleArr(filtros.statuses, s))}
                           style={{width:14,height:14,accentColor:"#1a4a4a"}} />
                         <span style={{flex:1}}>{s}</span>
@@ -1516,19 +1516,19 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
                       </label>
                     );
                   })}
-                  {filtros.statuses.length>0 && <button data-drop onClick={()=>setF("statuses",[])} style={{width:"100%",fontSize:11,padding:"5px",borderRadius:6,border:"0.5px solid #e5e7eb",background:"transparent",cursor:"pointer",marginTop:4,color:"#6b7280"}}>Limpar</button>}
+                  {filtros.statuses.length>0 && <button onClick={()=>setF("statuses",[])} style={{width:"100%",fontSize:11,padding:"5px",borderRadius:6,border:"0.5px solid #e5e7eb",background:"transparent",cursor:"pointer",marginTop:4,color:"#6b7280"}}>Limpar</button>}
                 </div>
               )}
             </div>
           </div>
 
           {/* Prazo multi-select */}
-          <div className="flex flex-col gap-1" data-drop>
+          <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-gray-500">
               Prazo {filtros.prazos.length > 0 && <span style={{color:"#1a4a4a"}}>({filtros.prazos.length})</span>}
             </label>
-            <div style={{position:"relative"}} data-drop>
-              <button data-drop onClick={e=>{e.stopPropagation();setDropAberto(dropAberto==="prazo"?null:"prazo");}}
+            <div style={{position:"relative"}}>
+              <button onClick={e=>{e.stopPropagation();setDropAberto(dropAberto==="prazo"?null:"prazo");}}
                 className="border rounded-lg px-3 py-2 text-sm bg-white flex items-center gap-2"
                 style={{borderColor: filtros.prazos.length?"#1a4a4a":"#e5e7eb", minWidth:150}}>
                 <span className="flex-1 text-left">
@@ -1539,12 +1539,12 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
                 <span style={{fontSize:10,opacity:.5}}>▾</span>
               </button>
               {dropAberto==="prazo" && (
-                <div data-drop style={{position:"absolute",top:"100%",left:0,zIndex:50,marginTop:4,background:"white",border:"0.5px solid #e5e7eb",borderRadius:10,padding:6,minWidth:180,boxShadow:"0 4px 12px rgba(0,0,0,0.1)"}}>
+                <div onClick={e=>e.stopPropagation()} style={{position:"absolute",top:"100%",left:0,zIndex:50,marginTop:4,background:"white",border:"0.5px solid #e5e7eb",borderRadius:10,padding:6,minWidth:180,boxShadow:"0 4px 12px rgba(0,0,0,0.1)"}}>
                   {[{v:"critico",l:"🔴 Crítico",desc:"60+ dias"},{v:"atencao",l:"🟡 Atenção",desc:"25-59 dias"},{v:"ok",l:"🟢 OK",desc:"0-24 dias"}].map(p=>{
                     const cnt = notas.filter(n=>p.v==="critico"?n.qtdeDias>=60:p.v==="atencao"?(n.qtdeDias>=25&&n.qtdeDias<60):n.qtdeDias<25).length;
                     return (
-                      <label key={p.v} data-drop style={{display:"flex",alignItems:"center",gap:8,padding:"7px 8px",borderRadius:6,cursor:"pointer",background:filtros.prazos.includes(p.v)?"#edf5f5":"transparent",fontSize:12}}>
-                        <input type="checkbox" data-drop checked={filtros.prazos.includes(p.v)}
+                      <label key={p.v} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 8px",borderRadius:6,cursor:"pointer",background:filtros.prazos.includes(p.v)?"#edf5f5":"transparent",fontSize:12}}>
+                        <input type="checkbox" checked={filtros.prazos.includes(p.v)}
                           onChange={()=>setF("prazos", toggleArr(filtros.prazos, p.v))}
                           style={{width:14,height:14,accentColor:"#1a4a4a"}} />
                         <span style={{flex:1}}>{p.l} <span style={{fontSize:10,color:"#9ca3af"}}>{p.desc}</span></span>
@@ -1552,7 +1552,7 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
                       </label>
                     );
                   })}
-                  {filtros.prazos.length>0 && <button data-drop onClick={()=>setF("prazos",[])} style={{width:"100%",fontSize:11,padding:"5px",borderRadius:6,border:"0.5px solid #e5e7eb",background:"transparent",cursor:"pointer",marginTop:4,color:"#6b7280"}}>Limpar</button>}
+                  {filtros.prazos.length>0 && <button onClick={()=>setF("prazos",[])} style={{width:"100%",fontSize:11,padding:"5px",borderRadius:6,border:"0.5px solid #e5e7eb",background:"transparent",cursor:"pointer",marginTop:4,color:"#6b7280"}}>Limpar</button>}
                 </div>
               )}
             </div>
