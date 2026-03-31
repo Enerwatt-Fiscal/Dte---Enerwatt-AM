@@ -1353,22 +1353,22 @@ function Dashboard({ notas, onVerNota, onIrParaPainel }) {
 // TELA: PAINEL DE NOTAS
 // ============================================================
 function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas }) {
-  const [filtros, setFiltros] = useState({
-    empresa: "", status: "", busca: "", dias: "", valor: "",
-    tipoData: "emissao", dtDe: "", dtAte: ""
-  });
-  const [filtrosAplicados, setFiltrosAplicados] = useState({
-    empresa: "", status: "", busca: "", dias: "", valor: "",
-    tipoData: "emissao", dtDe: "", dtAte: ""
-  });
+  const filtroVazio = { empresas: [], statuses: [], prazos: [], busca: "", valor: "", tipoData: "emissao", dtDe: "", dtAte: "" };
+  const [filtros, setFiltros] = useState({...filtroVazio});
+  const [filtrosAplicados, setFiltrosAplicados] = useState({...filtroVazio});
+  const [dropAberto, setDropAberto] = useState(null); // "empresa"|"status"|"prazo"|null
   const [mostrarImport, setMostrarImport] = useState(false);
   const setF = (k, v) => setFiltros(f => ({ ...f, [k]: v }));
-  const aplicarBusca = () => setFiltrosAplicados({ ...filtros });
-  const limparTudo = () => {
-    const vazio = { empresa: "", status: "", busca: "", dias: "", valor: "", tipoData: "emissao", dtDe: "", dtAte: "" };
-    setFiltros(vazio);
-    setFiltrosAplicados(vazio);
-  };
+
+  function toggleArr(arr, val) {
+    return arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val];
+  }
+
+  const aplicarBusca = () => { setFiltrosAplicados({ ...filtros }); setDropAberto(null); };
+  const limparTudo = () => { setFiltros({...filtroVazio}); setFiltrosAplicados({...filtroVazio}); setDropAberto(null); };
+
+  // Fechar dropdown ao clicar fora
+  const dropRef = React.useRef ? React.useRef(null) : { current: null };
 
   function parseDateBR2(str) {
     if (!str || str.length !== 10) return null;
@@ -1379,11 +1379,17 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
 
   const filtradas = notas.filter(n => {
     const f = filtrosAplicados;
-    if (f.empresa && n.empresa !== f.empresa) return false;
-    if (f.status && n.status !== f.status) return false;
-    if (f.dias === "critico" && n.qtdeDias < 60) return false;
-    if (f.dias === "atencao" && (n.qtdeDias < 25 || n.qtdeDias >= 60)) return false;
-    if (f.dias === "ok" && n.qtdeDias >= 25) return false;
+    if (f.empresas.length > 0 && !f.empresas.includes(n.empresa)) return false;
+    if (f.statuses.length > 0 && !f.statuses.includes(n.status)) return false;
+    if (f.prazos.length > 0) {
+      const isCrit = n.qtdeDias >= 60;
+      const isAten = n.qtdeDias >= 25 && n.qtdeDias < 60;
+      const isOk   = n.qtdeDias < 25;
+      const match = (f.prazos.includes("critico") && isCrit) ||
+                    (f.prazos.includes("atencao") && isAten) ||
+                    (f.prazos.includes("ok") && isOk);
+      if (!match) return false;
+    }
     if (f.valor === "acima25k" && n.valor <= 25000) return false;
     if (f.valor === "ate25k" && n.valor > 25000) return false;
     if (f.busca) {
@@ -1412,7 +1418,7 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
     setMostrarImport(false);
   };
 
-  const temFiltroAtivo = filtrosAplicados.empresa || filtrosAplicados.status || filtrosAplicados.busca || filtrosAplicados.dias || filtrosAplicados.valor || filtrosAplicados.dtDe || filtrosAplicados.dtAte;
+  const temFiltroAtivo = filtrosAplicados.empresas.length || filtrosAplicados.statuses.length || filtrosAplicados.prazos.length || filtrosAplicados.busca || filtrosAplicados.valor || filtrosAplicados.dtDe || filtrosAplicados.dtAte;
 
   return (
     <div className="space-y-4">
@@ -1439,37 +1445,120 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
       </div>
 
       {/* Filtros */}
-      <div className="rounded-2xl border p-4 space-y-3" style={{ borderColor: "#f0f0f0", background: "#fafafa" }}>
+      <div className="rounded-2xl border p-4" style={{ borderColor: "#f0f0f0", background: "#fafafa" }}
+        onClick={e => { if(!e.target.closest("[data-drop]")) setDropAberto(null); }}>
         <div className="flex flex-wrap gap-2 items-end">
-          <div className="flex flex-col gap-1" style={{ minWidth: 220 }}>
+
+          {/* Busca */}
+          <div className="flex flex-col gap-1" style={{ minWidth: 200 }}>
             <label className="text-xs font-semibold text-gray-500">Busca</label>
-            <input placeholder="Fornecedor, NF ou chave..." value={filtros.busca} onChange={e => setF("busca", e.target.value)}
+            <input placeholder="Fornecedor, NF ou chave..." value={filtros.busca}
+              onChange={e => setF("busca", e.target.value)}
               onKeyDown={e => e.key === "Enter" && aplicarBusca()}
               className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }} />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-500">Empresa</label>
-            <select value={filtros.empresa} onChange={e => setF("empresa", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
-              <option value="">Todas</option>
-              {EMPRESAS.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
-            </select>
+
+          {/* Empresa multi-select */}
+          <div className="flex flex-col gap-1" data-drop>
+            <label className="text-xs font-semibold text-gray-500">
+              Empresa {filtros.empresas.length > 0 && <span style={{color:"#1a4a4a"}}>({filtros.empresas.length})</span>}
+            </label>
+            <div style={{position:"relative"}} data-drop>
+              <button data-drop onClick={e=>{e.stopPropagation();setDropAberto(dropAberto==="empresa"?null:"empresa");}}
+                className="border rounded-lg px-3 py-2 text-sm bg-white flex items-center gap-2"
+                style={{borderColor: filtros.empresas.length?"#1a4a4a":"#e5e7eb", minWidth:160}}>
+                <span className="flex-1 text-left truncate">
+                  {filtros.empresas.length===0 ? "Todas" : filtros.empresas.length===1 ? EMPRESAS.find(e=>e.id===filtros.empresas[0])?.nome?.split(" - ").pop() : `${filtros.empresas.length} selecionadas`}
+                </span>
+                <span style={{fontSize:10,opacity:.5}}>▾</span>
+              </button>
+              {dropAberto==="empresa" && (
+                <div data-drop style={{position:"absolute",top:"100%",left:0,zIndex:50,marginTop:4,background:"white",border:"0.5px solid #e5e7eb",borderRadius:10,padding:6,minWidth:200,boxShadow:"0 4px 12px rgba(0,0,0,0.1)"}}>
+                  {EMPRESAS.map(e=>(
+                    <label key={e.id} data-drop style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:6,cursor:"pointer",background:filtros.empresas.includes(e.id)?"#edf5f5":"transparent",fontSize:12}}>
+                      <input type="checkbox" data-drop checked={filtros.empresas.includes(e.id)}
+                        onChange={()=>setF("empresas", toggleArr(filtros.empresas, e.id))}
+                        style={{width:14,height:14,accentColor:"#1a4a4a"}} />
+                      {e.nome.split(" - ").pop()}
+                    </label>
+                  ))}
+                  {filtros.empresas.length>0 && <button data-drop onClick={()=>setF("empresas",[])} style={{width:"100%",fontSize:11,padding:"5px",borderRadius:6,border:"0.5px solid #e5e7eb",background:"transparent",cursor:"pointer",marginTop:4,color:"#6b7280"}}>Limpar</button>}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-500">Status</label>
-            <select value={filtros.status} onChange={e => setF("status", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
-              <option value="">Todos</option>
-              {STATUS_LIST.map(s => <option key={s}>{s}</option>)}
-            </select>
+
+          {/* Status multi-select */}
+          <div className="flex flex-col gap-1" data-drop>
+            <label className="text-xs font-semibold text-gray-500">
+              Status {filtros.statuses.length > 0 && <span style={{color:"#1a4a4a"}}>({filtros.statuses.length})</span>}
+            </label>
+            <div style={{position:"relative"}} data-drop>
+              <button data-drop onClick={e=>{e.stopPropagation();setDropAberto(dropAberto==="status"?null:"status");}}
+                className="border rounded-lg px-3 py-2 text-sm bg-white flex items-center gap-2"
+                style={{borderColor: filtros.statuses.length?"#1a4a4a":"#e5e7eb", minWidth:170}}>
+                <span className="flex-1 text-left truncate">
+                  {filtros.statuses.length===0 ? "Todos" : filtros.statuses.length===1 ? filtros.statuses[0] : `${filtros.statuses.length} selecionados`}
+                </span>
+                <span style={{fontSize:10,opacity:.5}}>▾</span>
+              </button>
+              {dropAberto==="status" && (
+                <div data-drop style={{position:"absolute",top:"100%",left:0,zIndex:50,marginTop:4,background:"white",border:"0.5px solid #e5e7eb",borderRadius:10,padding:6,minWidth:210,boxShadow:"0 4px 12px rgba(0,0,0,0.1)",maxHeight:280,overflowY:"auto"}}>
+                  {STATUS_LIST.map(s=>{
+                    const cnt = notas.filter(n=>n.status===s).length;
+                    return (
+                      <label key={s} data-drop style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:6,cursor:"pointer",background:filtros.statuses.includes(s)?"#edf5f5":"transparent",fontSize:12}}>
+                        <input type="checkbox" data-drop checked={filtros.statuses.includes(s)}
+                          onChange={()=>setF("statuses", toggleArr(filtros.statuses, s))}
+                          style={{width:14,height:14,accentColor:"#1a4a4a"}} />
+                        <span style={{flex:1}}>{s}</span>
+                        {cnt>0 && <span style={{fontSize:10,padding:"1px 6px",borderRadius:20,background:"#f1f5f9",color:"#475569",fontWeight:500}}>{cnt}</span>}
+                      </label>
+                    );
+                  })}
+                  {filtros.statuses.length>0 && <button data-drop onClick={()=>setF("statuses",[])} style={{width:"100%",fontSize:11,padding:"5px",borderRadius:6,border:"0.5px solid #e5e7eb",background:"transparent",cursor:"pointer",marginTop:4,color:"#6b7280"}}>Limpar</button>}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-500">Prazo</label>
-            <select value={filtros.dias} onChange={e => setF("dias", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
-              <option value="">Todos</option>
-              <option value="critico">🔴 Crítico 60+d</option>
-              <option value="atencao">🟡 Atenção 25-59d</option>
-              <option value="ok">🟢 OK 0-24d</option>
-            </select>
+
+          {/* Prazo multi-select */}
+          <div className="flex flex-col gap-1" data-drop>
+            <label className="text-xs font-semibold text-gray-500">
+              Prazo {filtros.prazos.length > 0 && <span style={{color:"#1a4a4a"}}>({filtros.prazos.length})</span>}
+            </label>
+            <div style={{position:"relative"}} data-drop>
+              <button data-drop onClick={e=>{e.stopPropagation();setDropAberto(dropAberto==="prazo"?null:"prazo");}}
+                className="border rounded-lg px-3 py-2 text-sm bg-white flex items-center gap-2"
+                style={{borderColor: filtros.prazos.length?"#1a4a4a":"#e5e7eb", minWidth:150}}>
+                <span className="flex-1 text-left">
+                  {filtros.prazos.length===0 ? "Todos" : filtros.prazos.length===1 ?
+                    {critico:"🔴 Crítico",atencao:"🟡 Atenção",ok:"🟢 OK"}[filtros.prazos[0]] :
+                    `${filtros.prazos.length} selecionados`}
+                </span>
+                <span style={{fontSize:10,opacity:.5}}>▾</span>
+              </button>
+              {dropAberto==="prazo" && (
+                <div data-drop style={{position:"absolute",top:"100%",left:0,zIndex:50,marginTop:4,background:"white",border:"0.5px solid #e5e7eb",borderRadius:10,padding:6,minWidth:180,boxShadow:"0 4px 12px rgba(0,0,0,0.1)"}}>
+                  {[{v:"critico",l:"🔴 Crítico",desc:"60+ dias"},{v:"atencao",l:"🟡 Atenção",desc:"25-59 dias"},{v:"ok",l:"🟢 OK",desc:"0-24 dias"}].map(p=>{
+                    const cnt = notas.filter(n=>p.v==="critico"?n.qtdeDias>=60:p.v==="atencao"?(n.qtdeDias>=25&&n.qtdeDias<60):n.qtdeDias<25).length;
+                    return (
+                      <label key={p.v} data-drop style={{display:"flex",alignItems:"center",gap:8,padding:"7px 8px",borderRadius:6,cursor:"pointer",background:filtros.prazos.includes(p.v)?"#edf5f5":"transparent",fontSize:12}}>
+                        <input type="checkbox" data-drop checked={filtros.prazos.includes(p.v)}
+                          onChange={()=>setF("prazos", toggleArr(filtros.prazos, p.v))}
+                          style={{width:14,height:14,accentColor:"#1a4a4a"}} />
+                        <span style={{flex:1}}>{p.l} <span style={{fontSize:10,color:"#9ca3af"}}>{p.desc}</span></span>
+                        <span style={{fontSize:10,padding:"1px 6px",borderRadius:20,background:"#f1f5f9",color:"#475569",fontWeight:500}}>{cnt}</span>
+                      </label>
+                    );
+                  })}
+                  {filtros.prazos.length>0 && <button data-drop onClick={()=>setF("prazos",[])} style={{width:"100%",fontSize:11,padding:"5px",borderRadius:6,border:"0.5px solid #e5e7eb",background:"transparent",cursor:"pointer",marginTop:4,color:"#6b7280"}}>Limpar</button>}
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Valor */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-gray-500">Valor</label>
             <select value={filtros.valor} onChange={e => setF("valor", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
@@ -1478,6 +1567,8 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
               <option value="ate25k">Até R$ 25k</option>
             </select>
           </div>
+
+          {/* Data */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-gray-500">Data</label>
             <select value={filtros.tipoData} onChange={e => setF("tipoData", e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb" }}>
@@ -1489,25 +1580,53 @@ function PainelNotas({ notas, onVerNota, onImportar, ultimaImportacao, empresas 
             <label className="text-xs font-semibold text-gray-500">De</label>
             <input type="text" placeholder="DD/MM/AAAA" value={filtros.dtDe} maxLength={10}
               onChange={e => { let v=e.target.value.replace(/\D/g,""); if(v.length>=3)v=v.slice(0,2)+"/"+v.slice(2); if(v.length>=6)v=v.slice(0,5)+"/"+v.slice(5); setF("dtDe",v.slice(0,10)); }}
-              className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb", width: 110 }} />
+              className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb", width: 108 }} />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-gray-500">Até</label>
             <input type="text" placeholder="DD/MM/AAAA" value={filtros.dtAte} maxLength={10}
               onChange={e => { let v=e.target.value.replace(/\D/g,""); if(v.length>=3)v=v.slice(0,2)+"/"+v.slice(2); if(v.length>=6)v=v.slice(0,5)+"/"+v.slice(5); setF("dtAte",v.slice(0,10)); }}
-              className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb", width: 110 }} />
+              className="border rounded-lg px-3 py-2 text-sm bg-white" style={{ borderColor: "#e5e7eb", width: 108 }} />
           </div>
+
           <button onClick={aplicarBusca}
             className="px-5 py-2 rounded-lg text-sm font-bold text-white flex items-center gap-2"
             style={{ background: "#1a4a4a" }}>
             🔍 Buscar
           </button>
-          {(filtros.empresa||filtros.status||filtros.busca||filtros.dias||filtros.valor||filtros.dtDe||filtros.dtAte) && (
+          {temFiltroAtivo && (
             <button onClick={limparTudo} className="px-4 py-2 rounded-lg text-sm border font-medium text-gray-500" style={{ borderColor: "#e5e7eb" }}>
-              Limpar
+              Limpar tudo
             </button>
           )}
         </div>
+
+        {/* Tags de filtros ativos */}
+        {temFiltroAtivo && (
+          <div className="flex flex-wrap gap-2 mt-3 pt-3" style={{borderTop:"1px solid #f0f0f0"}}>
+            <span className="text-xs text-gray-400 self-center">Ativos:</span>
+            {filtrosAplicados.empresas.map(id=>{
+              const e=EMPRESAS.find(x=>x.id===id);
+              return <span key={id} className="flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium" style={{background:"#edf5f5",color:"#1a4a4a"}}>
+                {e?.nome?.split(" - ").pop()||id}
+                <button onClick={()=>{const n=filtros.empresas.filter(x=>x!==id);setFiltros(f=>({...f,empresas:n}));setFiltrosAplicados(f=>({...f,empresas:n}));}} style={{background:"none",border:"none",cursor:"pointer",color:"#1a4a4a",fontSize:13,lineHeight:1}}>×</button>
+              </span>;
+            })}
+            {filtrosAplicados.statuses.map(s=>(
+              <span key={s} className="flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium" style={{background:"#edf5f5",color:"#1a4a4a"}}>
+                {s}
+                <button onClick={()=>{const n=filtros.statuses.filter(x=>x!==s);setFiltros(f=>({...f,statuses:n}));setFiltrosAplicados(f=>({...f,statuses:n}));}} style={{background:"none",border:"none",cursor:"pointer",color:"#1a4a4a",fontSize:13,lineHeight:1}}>×</button>
+              </span>
+            ))}
+            {filtrosAplicados.prazos.map(p=>(
+              <span key={p} className="flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium" style={{background:"#edf5f5",color:"#1a4a4a"}}>
+                {{critico:"🔴 Crítico",atencao:"🟡 Atenção",ok:"🟢 OK"}[p]}
+                <button onClick={()=>{const n=filtros.prazos.filter(x=>x!==p);setFiltros(f=>({...f,prazos:n}));setFiltrosAplicados(f=>({...f,prazos:n}));}} style={{background:"none",border:"none",cursor:"pointer",color:"#1a4a4a",fontSize:13,lineHeight:1}}>×</button>
+              </span>
+            ))}
+            {filtrosAplicados.busca && <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium" style={{background:"#edf5f5",color:"#1a4a4a"}}>"{filtrosAplicados.busca}"<button onClick={()=>{setFiltros(f=>({...f,busca:""}));setFiltrosAplicados(f=>({...f,busca:""}));}} style={{background:"none",border:"none",cursor:"pointer",color:"#1a4a4a",fontSize:13,lineHeight:1}}>×</button></span>}
+          </div>
+        )}
       </div>
 
       <p className="text-xs text-gray-400 px-1">
